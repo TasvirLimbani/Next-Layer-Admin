@@ -1,0 +1,384 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { DataTable } from '@/components/admin/data-table';
+import { ProductForm } from '@/components/admin/product-form';
+import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { Product } from '@/components/admin/mock-data';
+
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch products on mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products');
+      const data = await response.json();
+
+      if (data.status && data.products) {
+        const rawProducts = Array.isArray(data.products) ? data.products : [data.products];
+
+        // Map API response to Product interface
+        const mappedProducts = rawProducts.map((product: any) => ({
+          id: product.id || '',
+          name: product.product_name || '',
+          price: parseFloat(product.price) || 0,
+          stock: parseInt(product.stock) || 0,
+          category: product.category || '',
+          description: product.description || '',
+          image: product.images
+            ? `http://nextlayer.soon.it/images/${product.images}`
+            : '',
+          subcategory: product.subcategory || '',
+          sku: product.sku || '',
+          status: product.status || 'active',
+          created_at: product.created_at || '',
+        }));
+
+        setProducts(mappedProducts);
+        setError(null);
+      } else {
+        setError('Failed to fetch products');
+      }
+    } catch (err) {
+      setError('Error fetching products');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddProduct = async (product: Product, formData?: FormData) => {
+    try {
+      const requestData = formData || createFormData(product);
+      console.log('Adding product:', product);
+
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        body: requestData,
+      });
+
+      const data = await response.json();
+      console.log('Add response:', data);
+
+      if (data.status) {
+        // Refresh products list to get the new product with correct ID from API
+        await fetchProducts();
+        setShowForm(false);
+        setError(null);
+      } else {
+        setError(data.message || 'Failed to add product');
+      }
+    } catch (err) {
+      setError('Error adding product');
+      console.error(err);
+    }
+  };
+
+  const handleUpdateProduct = async (product: Product, formData?: FormData) => {
+    try {
+      const requestData = formData || createFormData(product);
+      console.log('Updating product:', product.id, requestData);
+
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: 'PUT',
+        body: requestData,
+      });
+
+      const data = await response.json();
+      console.log('Update response:', data);
+
+      if (data.status) {
+        // Refresh products list to get updated data
+        await fetchProducts();
+        setEditingProduct(undefined);
+        setShowForm(false);
+        setError(null);
+      } else {
+        setError(data.message || 'Failed to update product');
+      }
+    } catch (err) {
+      setError('Error updating product');
+      console.error(err);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (deleteId) {
+      try {
+        console.log('Deleting product:', deleteId);
+
+        const response = await fetch(`/api/products/${deleteId}`, {
+          method: 'DELETE',
+        });
+
+        const data = await response.json();
+        console.log('Delete response:', data);
+
+        if (data.status) {
+          setProducts((prev) => prev.filter((p) => p.id !== deleteId));
+          setDeleteId(null);
+          setError(null);
+        } else {
+          setError(data.message || 'Failed to delete product');
+        }
+      } catch (err) {
+        setError('Error deleting product');
+        console.error(err);
+      }
+    }
+  };
+
+  const handleSubmitForm = (product: Product, formData?: FormData) => {
+    if (editingProduct) {
+      handleUpdateProduct(product, formData);
+    } else {
+      handleAddProduct(product, formData);
+    }
+  };
+
+  const createFormData = (product: Product): FormData => {
+    const formData = new FormData();
+
+    // REQUIRED
+    formData.append('id', String(product.id));
+
+    formData.append('product_name', product.name || '');
+    formData.append('category', product.category || '');
+    formData.append('subcategory', product.subcategory || '');
+    formData.append('sku', product.sku || '');
+
+    formData.append('price', String(product.price || 0));
+    formData.append('stock', String(product.stock || 0));
+
+    formData.append('description', product.description || '');
+
+    formData.append('status', product.status || 'active');
+
+    return formData;
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingProduct(undefined);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600" />
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto text-red-600 hover:text-red-700 font-medium"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Products</h1>
+            <p className="text-slate-600 mt-2">Manage your product inventory and details</p>
+          </div>
+          <button
+            onClick={() => {
+              setEditingProduct(undefined);
+              setShowForm(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 font-medium text-white hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+          >
+            <Plus className="h-5 w-5" />
+            Add New Product
+          </button>
+        </div>
+
+        {/* Products Stats */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-600">Total Products</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">{products.length}</p>
+            <p className="mt-4 text-xs text-slate-500">Active in catalog</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-600">Total Value</p>
+           <p className="mt-2 text-3xl font-bold text-slate-900">
+  $
+  {products
+    .reduce((sum, p) => {
+      const price = parseFloat(String(p.price)) || 0;
+      const stock = parseInt(String(p.stock)) || 0;
+
+      return sum + price * stock;
+    }, 0)
+    .toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}
+</p>
+            <p className="mt-4 text-xs text-slate-500">Inventory value</p>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-600">Low Stock Items</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {products.filter(p => Number(p.stock) < 20).length}
+            </p>
+            <p className="mt-4 text-xs text-slate-500">Need attention</p>
+          </div>
+        </div>
+
+        {/* Products Table */}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-4">
+            <h2 className="text-lg font-semibold text-slate-900">Product List</h2>
+          </div>
+          <div className="p-6">
+            <DataTable
+              columns={[
+                {
+                  key: 'image',
+                  label: 'Image',
+                  render: (value) => {
+                    // FIX IMAGE URL
+                    const imageUrl = value
+                      ? value.startsWith('http')
+                        ? value
+                        : `http://nextlayer.soon.it/uploads/${value}`
+                      : '';
+
+                    return (
+                      <div className="flex items-center justify-center">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt="Product"
+                            className="h-10 w-10 rounded object-cover border"
+                            onError={(e) => {
+                              console.log('IMAGE ERROR:', imageUrl);
+
+                              (e.target as HTMLImageElement).src =
+                                'https://placehold.co/40x40?text=No';
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center text-slate-400">
+                            No
+                          </div>
+                        )}
+                      </div>
+                    );
+                  },
+                },
+                {
+                  key: 'name',
+                  label: 'Product Name',
+                  className: 'max-w-xs',
+                },
+                {
+                  key: 'category',
+                  label: 'Category',
+                },
+                {
+                  key: 'price',
+                  label: 'Price',
+                  render: (value) => (
+                    <span className="font-semibold text-slate-900">${(Number(value) || 0).toFixed(2)}</span>
+                  ),
+                },
+                {
+                  key: 'subcategory',
+                  label: 'Subcategory',
+                  render: (value) => value || <span className="text-slate-500">N/A</span>,
+                },
+                { key: 'sku', label: 'SKU', render: (value) => value || <span className="text-slate-500">N/A</span> },
+                {
+                  key: 'stock',
+                  label: 'Stock',
+                  render: (value) => {
+                    const stock = Number(value) || 0;
+                    const bgColor = stock > 50 ? 'bg-green-50' : stock > 20 ? 'bg-yellow-50' : 'bg-red-50';
+                    const textColor = stock > 50 ? 'text-green-700' : stock > 20 ? 'text-yellow-700' : 'text-red-700';
+                    return (
+                      <span className={`inline-block rounded-lg px-3 py-1 text-sm font-medium ${bgColor} ${textColor}`}>
+                        {stock} items
+                      </span>
+                    );
+                  },
+                },
+              ]}
+              data={products}
+              renderActions={(product) => (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit product"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(product.id)}
+                    className="rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
+                    title="Delete product"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Product Form Modal */}
+      {showForm && (
+        <ProductForm
+          product={editingProduct}
+          onSubmit={handleSubmitForm}
+          onClose={handleCloseForm}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteId && (
+        <ConfirmDialog
+          title="Delete Product"
+          description="Are you sure you want to delete this product? This action cannot be undone."
+          onConfirm={handleDeleteProduct}
+          onCancel={() => setDeleteId(null)}
+          isDestructive
+        />
+      )}
+    </>
+  );
+}
+
