@@ -1,0 +1,259 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+import Link from 'next/link';
+
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+
+import { FilamentForm } from '@/components/admin/filament-form';
+
+interface Filament {
+  id: string;
+  title: string;
+  description: string;
+  sku: string;
+  slug: string;
+  colour: string[];
+  diameter: string[];
+  weight: string[];
+  price: string;
+  images: string[];
+}
+
+export default function FilamentPage() {
+  const [filaments, setFilaments] =
+    useState<Filament[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [open, setOpen] =
+    useState(false);
+
+  const [editData, setEditData] =
+    useState<Filament | null>(null);
+
+  const fetchFilaments =
+    async () => {
+      try {
+        const response =
+          await fetch(
+            '/api/filament'
+          );
+
+        const data =
+          await response.json();
+
+        setFilaments(
+          data.data || []
+        );
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  useEffect(() => {
+    fetchFilaments();
+  }, []);
+
+  const handleDelete = async (
+    id: string
+  ) => {
+    if (
+      !confirm(
+        'Delete filament?'
+      )
+    )
+      return;
+
+    const formData =
+      new FormData();
+
+    formData.append('id', id);
+
+    await fetch(
+      '/api/filament',
+      {
+        method: 'DELETE',
+        body: formData,
+      }
+    );
+
+    fetchFilaments();
+  };
+
+  return (
+    <div className="space-y-6 p-6">
+
+      <div className="flex items-center justify-between">
+
+        <div>
+
+          <h1 className="text-3xl font-bold">
+            Filament
+          </h1>
+
+          <p className="text-slate-500">
+            Manage all filament
+            products
+          </p>
+        </div>
+
+        <button
+          onClick={() => {
+            setEditData(null);
+
+            setOpen(true);
+          }}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+        >
+
+          <Plus className="h-5 w-5" />
+
+          Add Filament
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+
+        <table className="w-full">
+
+          <thead className="bg-slate-50">
+
+            <tr>
+
+              <th className="px-6 py-4 text-left">
+                Image
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Title
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                SKU
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Price
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Actions
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-10 text-center"
+                >
+                  Loading...
+                </td>
+              </tr>
+            ) : filaments.length ===
+              0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-10 text-center"
+                >
+                  No filament found
+                </td>
+              </tr>
+            ) : (
+              filaments.map(
+                (item) => (
+                  <tr
+                    key={item.id}
+                    className="border-t"
+                  >
+
+                    <td className="px-6 py-4">
+
+                      <img
+                        src={
+                          item.images?.[0]
+                        }
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                    </td>
+
+                    <td className="px-6 py-4 font-semibold">
+                      {item.title}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {item.sku}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      ₹{item.price}
+                    </td>
+
+                    <td className="px-6 py-4">
+
+                      <div className="flex gap-3">
+
+                        <button
+                          onClick={() => {
+                            setEditData(
+                              item
+                            );
+
+                            setOpen(
+                              true
+                            );
+                          }}
+                          className="rounded-lg bg-blue-100 p-2 text-blue-600"
+                        >
+
+                          <Pencil className="h-4 w-4" />
+
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleDelete(
+                              item.id
+                            )
+                          }
+                          className="rounded-lg bg-red-100 p-2 text-red-600"
+                        >
+
+                          <Trash2 className="h-4 w-4" />
+
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {open && (
+        <FilamentForm
+          filament={editData}
+          onClose={() =>
+            setOpen(false)
+          }
+          onSuccess={() => {
+            setOpen(false);
+
+            fetchFilaments();
+          }}
+        />
+      )}
+    </div>
+  );
+}

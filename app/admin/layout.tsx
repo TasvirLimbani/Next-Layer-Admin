@@ -26,6 +26,11 @@ const navItems = [
     href: '/admin/users',
     icon: Users,
   },
+  {
+    name: 'Filament',
+    href: '/admin/filament',
+    icon: Settings,
+  }
 ];
 
 export default function AdminLayout({

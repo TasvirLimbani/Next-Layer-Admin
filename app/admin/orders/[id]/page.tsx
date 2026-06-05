@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -12,7 +12,8 @@ interface OrderItem {
   quantity: number;
   price: string;
   product_name: string | null;
-  images: string | null;
+  images?: string;
+  image_urls?: string[];
 }
 
 interface OrderData {
@@ -47,6 +48,10 @@ export default function OrderDetailPage() {
 
   const [error, setError] =
     useState('');
+
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // FETCH ORDER DETAILS
   useEffect(() => {
@@ -98,6 +103,24 @@ export default function OrderDetailPage() {
         setLoading(false);
       }
     };
+
+  const openLightbox = (images: string[]) => {
+    setLightboxImages(images);
+    setLightboxIndex(0);
+    setShowLightbox(true);
+  };
+
+  const nextImage = () => {
+    setLightboxIndex((prev) =>
+      prev === lightboxImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setLightboxIndex((prev) =>
+      prev === 0 ? lightboxImages.length - 1 : prev - 1
+    );
+  };
 
   // LOADING
   if (loading) {
@@ -154,7 +177,8 @@ export default function OrderDetailPage() {
           : 'bg-blue-100 text-blue-700';
 
   return (
-    <div className="space-y-8">
+    <>
+      <div className="space-y-8">
       {/* BACK BUTTON */}
       <Link
         href="/admin/orders"
@@ -301,10 +325,34 @@ export default function OrderDetailPage() {
 
         <div className="space-y-5 p-8">
           {items.map((item) => {
-            const imageUrl =
-              item.images
-                ? `http://nextlayer.soon.it/uploads/${item.images}`
-                : '/placeholder.png';
+            // Parse all images from JSON string or use image_urls
+            let allImages: string[] = [];
+            let mainImage = '/placeholder.png';
+            
+            try {
+              // Try to parse the images JSON string
+              if (item.images && typeof item.images === 'string') {
+                const parsedImages = JSON.parse(item.images);
+                if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+                  allImages = parsedImages.map((filename: string) => 
+                    `http://nextlayer.soon.it/images/${filename}`
+                  );
+                  mainImage = allImages[0];
+                }
+              }
+              // Fall back to image_urls if available and valid
+              else if (item.image_urls && Array.isArray(item.image_urls) && item.image_urls.length > 0) {
+                const validUrls = item.image_urls.filter((url: string) => 
+                  url && url.startsWith('http') && !url.includes('[') && !url.includes('"')
+                );
+                if (validUrls.length > 0) {
+                  allImages = validUrls;
+                  mainImage = allImages[0];
+                }
+              }
+            } catch (err) {
+              console.error('Error parsing images:', err);
+            }
 
             return (
               <div
@@ -314,14 +362,63 @@ export default function OrderDetailPage() {
                 {/* LEFT */}
                 <div className="flex items-center gap-5">
                   {/* IMAGE */}
-                  <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    <Image
-                      src={imageUrl}
-                      alt="Product"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                  <div className="flex flex-col gap-3">
+                    {/* Main Image */}
+                    <button
+                      onClick={() => openLightbox(allImages)}
+                      className="relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200 bg-white hover:opacity-75 transition-opacity cursor-pointer group"
+                    >
+                      <Image
+                        src={mainImage}
+                        alt="Product"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.png';
+                        }}
+                      />
+                      {allImages.length > 1 && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors rounded-xl">
+                          <svg className="w-5 h-5 text-white opacity-0 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Thumbnail Gallery */}
+                    {allImages.length > 1 && (
+                      <div className="flex gap-2">
+                        {allImages.map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setLightboxIndex(idx);
+                              setLightboxImages(allImages);
+                              setShowLightbox(true);
+                            }}
+                            className={`relative h-12 w-12 overflow-hidden rounded border-2 transition-all ${
+                              idx === 0 
+                                ? 'border-blue-500' 
+                                : 'border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <Image
+                              src={img}
+                              alt={`Thumbnail ${idx + 1}`}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder.png';
+                              }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* INFO */}
@@ -422,6 +519,61 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Image Lightbox Modal */}
+            </div>
+      {showLightbox && lightboxImages.length > 0 && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+        <div className="relative w-full max-w-4xl flex flex-col items-center">
+          {/* Close Button */}
+          <button
+            onClick={() => setShowLightbox(false)}
+            className="absolute -top-12 right-0 text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+            title="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* Image Container */}
+          <div className="relative w-full bg-black rounded-lg overflow-hidden">
+            <img
+              src={lightboxImages[lightboxIndex]}
+              alt={`Product image ${lightboxIndex + 1}`}
+              className="w-full h-auto max-h-[80vh] object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  'https://placehold.co/800x600?text=Image+Not+Found';
+              }}
+            />
+          </div>
+
+          {/* Navigation Controls */}
+          {lightboxImages.length > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <button
+                onClick={prevImage}
+                className="text-white hover:bg-white/20 rounded-lg p-3 transition-colors"
+                title="Previous image"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+
+              <div className="text-white text-sm font-medium bg-white/10 rounded-lg px-4 py-2">
+                {lightboxIndex + 1} / {lightboxImages.length}
+              </div>
+
+              <button
+                onClick={nextImage}
+                className="text-white hover:bg-white/20 rounded-lg p-3 transition-colors"
+                title="Next image"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      )}
+    </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, AlertCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DataTable } from '@/components/admin/data-table';
 import { ProductForm } from '@/components/admin/product-form';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
@@ -14,6 +14,9 @@ export default function ProductsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   // Fetch products on mount
   useEffect(() => {
@@ -28,22 +31,37 @@ export default function ProductsPage() {
       if (data.status && data.products) {
         const rawProducts = Array.isArray(data.products) ? data.products : [data.products];
 
+        console.log('Raw API Response:', rawProducts);
+
         // Map API response to Product interface
-        const mappedProducts = rawProducts.map((product: any) => ({
-          id: product.id || '',
-          name: product.product_name || '',
-          price: parseFloat(product.price) || 0,
-          stock: parseInt(product.stock) || 0,
-          category: product.category || '',
-          description: product.description || '',
-          image: product.images
-            ? `http://nextlayer.soon.it/images/${product.images}`
-            : '',
-          subcategory: product.subcategory || '',
-          sku: product.sku || '',
-          status: product.status || 'active',
-          created_at: product.created_at || '',
-        }));
+        const mappedProducts = rawProducts.map((product: any) => {
+          // Handle both single image and multiple images
+          // Use image_urls directly from API
+          const fullImageUrls = Array.isArray(product.image_urls)
+            ? product.image_urls
+            : [];
+
+          console.log(
+            `Product "${product.product_name}" - fullImageUrls:`,
+            fullImageUrls
+          );
+
+          return {
+            id: product.id || '',
+            name: product.product_name || '',
+            price: parseFloat(product.price) || 0,
+            stock: parseInt(product.stock) || 0,
+            category: product.category || '',
+            description: product.description || '',
+            image: fullImageUrls.join(','),
+            subcategory: product.subcategory || '',
+            sku: product.sku || '',
+            status: product.status || 'active',
+            created_at: product.created_at || '',
+          };
+        });
+
+        console.log('Mapped Products:', mappedProducts);
 
         setProducts(mappedProducts);
         setError(null);
@@ -178,6 +196,24 @@ export default function ProductsPage() {
     setEditingProduct(undefined);
   };
 
+  const openLightbox = (imageUrls: string[], index: number = 0) => {
+    setLightboxImages(imageUrls);
+    setLightboxIndex(index);
+    setShowLightbox(true);
+  };
+
+  const nextImage = () => {
+    setLightboxIndex((prev) =>
+      prev === lightboxImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setLightboxIndex((prev) =>
+      prev === 0 ? lightboxImages.length - 1 : prev - 1
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -231,20 +267,20 @@ export default function ProductsPage() {
           </div>
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
             <p className="text-sm font-medium text-slate-600">Total Value</p>
-           <p className="mt-2 text-3xl font-bold text-slate-900">
-  $
-  {products
-    .reduce((sum, p) => {
-      const price = parseFloat(String(p.price)) || 0;
-      const stock = parseInt(String(p.stock)) || 0;
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              $
+              {products
+                .reduce((sum, p) => {
+                  const price = parseFloat(String(p.price)) || 0;
+                  const stock = parseInt(String(p.stock)) || 0;
 
-      return sum + price * stock;
-    }, 0)
-    .toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}
-</p>
+                  return sum + price * stock;
+                }, 0)
+                .toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+            </p>
             <p className="mt-4 text-xs text-slate-500">Inventory value</p>
           </div>
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
@@ -268,29 +304,50 @@ export default function ProductsPage() {
                   key: 'image',
                   label: 'Image',
                   render: (value) => {
-                    // FIX IMAGE URL
-                    const imageUrl = value
-                      ? value.startsWith('http')
-                        ? value
-                        : `http://nextlayer.soon.it/uploads/${value}`
-                      : '';
+                    // Parse multiple images from comma-separated string
+                    const imageUrls = value && typeof value === 'string'
+                      ? value
+                        .split(',')
+                        .map((img: string) => img.trim())
+                        .filter((img: string) => img.length > 0)
+                      : [];
 
                     return (
-                      <div className="flex items-center justify-center">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt="Product"
-                            className="h-10 w-10 rounded object-cover border"
-                            onError={(e) => {
-                              console.log('IMAGE ERROR:', imageUrl);
-
-                              (e.target as HTMLImageElement).src =
-                                'https://placehold.co/40x40?text=No';
-                            }}
-                          />
+                      <div className="flex items-center gap-2">
+                        {imageUrls.length > 0 ? (
+                          <>
+                            <button
+                              onClick={() => openLightbox(imageUrls, 0)}
+                              className="relative group overflow-hidden rounded hover:opacity-75 transition-opacity"
+                            >
+                              <img
+                                src={imageUrls[0]}
+                                alt="Product"
+                                className="h-10 w-10 rounded object-cover border border-slate-200 cursor-pointer"
+                                onError={(e) => {
+                                  console.error('Image load error:', imageUrls[0]);
+                                  (e.target as HTMLImageElement).src =
+                                    'https://placehold.co/40x40?text=No+Image';
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors rounded">
+                                <svg className="w-3 h-3 text-white opacity-0 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            </button>
+                            {imageUrls.length > 1 && (
+                              <button
+                                onClick={() => openLightbox(imageUrls, 0)}
+                                className="text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded px-2 py-1 cursor-pointer transition-colors"
+                              >
+                                +{imageUrls.length - 1}
+                              </button>
+                            )}
+                          </>
                         ) : (
-                          <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center text-slate-400">
+                          <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs">
                             No
                           </div>
                         )}
@@ -377,6 +434,60 @@ export default function ProductsPage() {
           onCancel={() => setDeleteId(null)}
           isDestructive
         />
+      )}
+
+      {/* Image Lightbox Modal */}
+      {showLightbox && lightboxImages.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+          <div className="relative w-full max-w-4xl flex flex-col items-center">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLightbox(false)}
+              className="absolute -top-12 right-0 text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+              title="Close"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Image Container */}
+            <div className="relative w-full bg-black rounded-lg overflow-hidden">
+              <img
+                src={lightboxImages[lightboxIndex]}
+                alt={`Product image ${lightboxIndex + 1}`}
+                className="w-full h-auto max-h-[80vh] object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    'https://placehold.co/800x600?text=Image+Not+Found';
+                }}
+              />
+            </div>
+
+            {/* Navigation Controls */}
+            {lightboxImages.length > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  onClick={prevImage}
+                  className="text-white hover:bg-white/20 rounded-lg p-3 transition-colors"
+                  title="Previous image"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+
+                <div className="text-white text-sm font-medium bg-white/10 rounded-lg px-4 py-2">
+                  {lightboxIndex + 1} / {lightboxImages.length}
+                </div>
+
+                <button
+                  onClick={nextImage}
+                  className="text-white hover:bg-white/20 rounded-lg p-3 transition-colors"
+                  title="Next image"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </>
   );
