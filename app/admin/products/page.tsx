@@ -37,9 +37,12 @@ export default function ProductsPage() {
         const mappedProducts = rawProducts.map((product: any) => {
           // Handle both single image and multiple images
           // Use image_urls directly from API
-          const fullImageUrls = Array.isArray(product.image_urls)
-            ? product.image_urls
-            : [];
+   const fullImageUrls =
+  Array.isArray(product.image_urls)
+    ? product.image_urls
+    : typeof product.image_urls === 'string'
+    ? product.image_urls.split(',').map(i => i.trim())
+    : [];
 
           console.log(
             `Product "${product.product_name}" - fullImageUrls:`,

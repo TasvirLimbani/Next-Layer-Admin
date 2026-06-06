@@ -153,13 +153,13 @@ export function ProductForm({
       return;
     }
 
-    const apiFormData =
-      new FormData();
+const apiFormData = new FormData();
 
-    apiFormData.append(
-      'id',
-      String(formData.id || '')
-    );
+/* IMPORTANT */
+apiFormData.append(
+  'delete_images',
+  JSON.stringify(deletedImages || [])
+);
 
     apiFormData.append(
       'product_name',
@@ -364,19 +364,29 @@ export function ProductForm({
   // =========================
   // REMOVE IMAGE
   // =========================
+const [deletedImages, setDeletedImages] = useState<string[]>([]);
 
-  const handleRemoveImage = (
-    index: number
-  ) => {
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+const handleRemoveImage = (index: number) => {
+  const removed = imagePreviews[index];
 
-    // if the removed preview is a new file, remove from imageFiles in blob-order
-    const preview = imagePreviews[index];
-    if (typeof preview === 'string' && preview.startsWith('blob:')) {
-      const fileIndex = imagePreviews.slice(0, index).filter((p) => typeof p === 'string' && p.startsWith('blob:')).length;
-      setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
-    }
-  };
+  setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+
+  // OLD IMAGE → mark for backend delete
+  if (removed && !removed.startsWith('blob:')) {
+    setDeletedImages((prev) => [...prev, removed]);
+  }
+
+  // NEW IMAGE → remove correct file safely
+  if (removed && removed.startsWith('blob:')) {
+    const blobIndexes = imagePreviews
+      .slice(0, index)
+      .filter((p) => p.startsWith('blob:')).length;
+
+    setImageFiles((prev) =>
+      prev.filter((_, i) => i !== blobIndexes)
+    );
+  }
+};
 
   return (
 

@@ -59,6 +59,7 @@ export function FilamentForm({
     );
 
   const [existingImages, setExistingImages] = useState<string[]>(filament?.images || []);
+  const [deletedImages, setDeletedImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [primaryImage, setPrimaryImage] = useState<{ type: 'existing' | 'new'; index: number } | null>(
     null
@@ -74,14 +75,10 @@ export function FilamentForm({
 
     setLoading(true);
 
-    const formData =
-      new FormData();
+   const formData = new FormData();
 
     if (filament?.id) {
-      formData.append(
-        'id',
-        filament.id
-      );
+      formData.append('id', filament.id);
     }
 
     formData.append(
@@ -124,6 +121,10 @@ export function FilamentForm({
       form.sku
     );
 
+     formData.append(
+      'delete_images',
+      JSON.stringify(deletedImages)
+    );
     // include kept existing image URLs (so backend can keep them)
     if (existingImages && existingImages.length > 0) {
       existingImages.forEach((url) => formData.append('existing_images[]', url));
@@ -240,10 +241,12 @@ export function FilamentForm({
                         <div className="mt-2 flex gap-2 justify-center">
                           <button
                             type="button"
-                            onClick={() => {
-                              setExistingImages((prev) => prev.filter((_, i) => i !== idx));
-                              if (primaryImage?.type === 'existing' && primaryImage.index === idx) setPrimaryImage(null);
-                            }}
+                             onClick={() => {
+                      setDeletedImages((prev) => [...prev, url]);
+                      setExistingImages((prev) =>
+                        prev.filter((_, i) => i !== idx)
+                      );
+                    }}
                             title="Remove image"
                             className="flex items-center gap-1 text-xs px-2 py-1 bg-red-50 text-red-600 rounded"
                           >
