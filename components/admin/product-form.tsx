@@ -11,6 +11,8 @@ import {
   Boxes,
   Tag,
   FileText,
+  Star,
+  Trash2,
 } from 'lucide-react';
 
 import { Switch } from '@/components/ui/switch';
@@ -207,20 +209,28 @@ export function ProductForm({
     );
 
     // =========================
-    // IMAGE FIX
+    // IMAGE FIX: include existing image URLs and new files
     // =========================
 
-    if (imageFiles.length > 0) {
-
-      imageFiles.forEach((file) => {
-
-        // IMPORTANT
-        apiFormData.append(
-          'images[]',
-          file
-        );
-      });
+    // Build images submission by inspecting previews: blob: => new file, otherwise existing URL
+    if (imagePreviews && imagePreviews.length > 0) {
+      let newFileIdx = 0;
+      for (let i = 0; i < imagePreviews.length; i++) {
+        const preview = String(imagePreviews[i] || '');
+        if (preview.startsWith('blob:')) {
+          const file = imageFiles[newFileIdx];
+          if (file) apiFormData.append('images[]', file);
+          newFileIdx++;
+        } else if (preview.length > 0) {
+          apiFormData.append('existing_images[]', preview);
+        }
+      }
+    } else {
+      // no previews but possibly new files
+      imageFiles.forEach((file) => apiFormData.append('images[]', file));
     }
+
+    console.log('Submitting images: existing_images count:', apiFormData.getAll('existing_images[]').length, 'new images count:', apiFormData.getAll('images[]').length);
 
     // DEBUG
     for (const pair of apiFormData.entries()) {
@@ -358,18 +368,14 @@ export function ProductForm({
   const handleRemoveImage = (
     index: number
   ) => {
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
 
-    setImagePreviews((prev) =>
-      prev.filter(
-        (_, i) => i !== index
-      )
-    );
-
-    setImageFiles((prev) =>
-      prev.filter(
-        (_, i) => i !== index
-      )
-    );
+    // if the removed preview is a new file, remove from imageFiles in blob-order
+    const preview = imagePreviews[index];
+    if (typeof preview === 'string' && preview.startsWith('blob:')) {
+      const fileIndex = imagePreviews.slice(0, index).filter((p) => typeof p === 'string' && p.startsWith('blob:')).length;
+      setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+    }
   };
 
   return (
@@ -421,6 +427,54 @@ export function ProductForm({
           onSubmit={handleSubmit}
           className="space-y-8 p-8"
         >
+
+          {/* Upload + previews at top */}
+          <div className="flex items-start gap-6">
+            <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-4 w-44 cursor-pointer">
+              <Upload className="h-8 w-8 text-blue-600" />
+              <p className="text-sm">Upload Images</p>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </label>
+
+            <div className="flex-1">
+              <div
+                className="flex gap-3 items-start py-2 whitespace-nowrap"
+                style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+              >
+                {imagePreviews && imagePreviews.length > 0
+                  ? imagePreviews.map((url, idx) => (
+                    <div key={url + idx} className="inline-block mr-2 relative">
+                      <div className="h-24 w-28 rounded overflow-hidden border bg-white shadow-sm">
+                        <img src={url} alt={`preview-${idx}`} className="h-full w-full object-cover" />
+                      </div>
+
+                      <div className="absolute -top-2 -left-2 bg-yellow-400 rounded-full p-1 shadow flex items-center justify-center">
+                        {idx === 0 ? <Star className="h-3 w-3 text-white" /> : null}
+                      </div>
+
+                      <div className="mt-2 flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          title="Remove image"
+                          className="flex items-center gap-1 text-xs px-2 py-1 bg-red-50 text-red-600 rounded"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                  : null}
+              </div>
+            </div>
+          </div>
 
           {/* PRODUCT NAME */}
 
@@ -631,99 +685,7 @@ export function ProductForm({
             </div>
           </div>
 
-          {/* IMAGE SECTION */}
 
-          <div>
-
-            <div className="mb-4 flex items-center gap-2">
-
-              <Upload className="h-5 w-5 text-pink-600" />
-
-              <h3 className="text-lg font-semibold">
-                Product Images
-              </h3>
-            </div>
-
-            {/* PREVIEW */}
-
-            {imagePreviews.length >
-              0 && (
-
-                <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-
-                  {imagePreviews.map(
-                    (
-                      preview,
-                      index
-                    ) => (
-
-                      <div
-                        key={index}
-                        className="group relative overflow-hidden rounded-xl border"
-                      >
-
-                        <img
-                          src={preview}
-                          alt={`Preview ${index}`}
-                          className="h-32 w-full object-cover"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleRemoveImage(
-                              index
-                            )
-                          }
-                          className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-all group-hover:opacity-100"
-                        >
-
-                          <X className="h-6 w-6 text-white" />
-
-                        </button>
-                      </div>
-                    )
-                  )}
-
-                </div>
-              )}
-
-            {/* FILE INPUT */}
-
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 hover:border-blue-500">
-
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-
-                <Upload className="h-8 w-8 text-blue-600" />
-
-              </div>
-
-              <div className="text-center">
-
-                <p className="font-semibold">
-
-                  Click to Upload Images
-
-                </p>
-
-                <p className="text-sm text-slate-500">
-
-                  PNG, JPG, WEBP up to 5MB
-
-                </p>
-              </div>
-
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={
-                  handleImageChange
-                }
-                className="hidden"
-              />
-            </label>
-          </div>
 
           {/* BUTTONS */}
 

@@ -22,16 +22,102 @@ export async function PUT(
 
     console.log('Editing product ID:', id);
 
-    const response = await fetch(
-      'http://nextlayer.soon.it/api/Products/edit.php',
-      {
+    // Log formData entries (filenames for File objects)
+    try {
+      const fdLog: any[] = [];
+      for (const pair of formData.entries()) {
+        const [key, val] = pair as [string, any];
+        if (val && typeof val === 'object' && 'name' in val) {
+          fdLog.push({ key, filename: (val as File).name });
+        } else {
+          fdLog.push({ key, value: String(val) });
+        }
+      }
+      console.log('FormData being forwarded to edit.php:', fdLog);
+    } catch (fdErr) {
+      console.warn('Could not enumerate formData for logging', fdErr);
+    }
+
+    // If there are no File entries in formData, send as URLSearchParams
+    let hasFiles = false;
+    for (const pair of formData.entries()) {
+      const [, val] = pair as [string, any];
+      if (val && typeof val === 'object' && 'name' in val) {
+        hasFiles = true;
+        break;
+      }
+    }
+
+    let response: Response;
+    if (!hasFiles) {
+      const params = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        params.append(key, String(value));
+      }
+      response = await fetch('http://nextlayer.soon.it/api/Products/edit.php', {
+        method: 'POST',
+        body: params,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        cache: 'no-store',
+      });
+    } else {
+      response = await fetch('http://nextlayer.soon.it/api/Products/edit.php', {
         method: 'POST',
         body: formData,
         cache: 'no-store',
-      }
-    );
+      });
+    }
 
-    const data = await response.json();
+    let data: any;
+    const resText = await response.text();
+    // Try to parse JSON even if upstream prepends/appends noise (e.g. "php {...}")
+    try {
+      data = JSON.parse(resText);
+    } catch (parseErr) {
+      const start = resText.indexOf('{');
+      const end = resText.lastIndexOf('}');
+      if (start !== -1 && end !== -1 && end > start) {
+        const sub = resText.slice(start, end + 1);
+        try {
+          data = JSON.parse(sub);
+          console.log('Parsed JSON from wrapped upstream response');
+        } catch (subErr) {
+          console.error('Failed to parse extracted JSON from upstream response', subErr, 'original:', resText);
+          return NextResponse.json(
+            {
+              status: false,
+              message: `Upstream error: ${resText}`,
+            },
+            { status: response.status || 502 }
+          );
+        }
+      } else {
+        console.error('Edit API returned non-JSON response:', resText);
+        return NextResponse.json(
+          {
+            status: false,
+            message: `Upstream error: ${resText}`,
+          },
+          { status: response.status || 502 }
+        );
+      }
+    }
+
+    // Normalize image_urls when upstream returns it as a JSON string
+    try {
+      if (data && data.image_urls && typeof data.image_urls === 'string') {
+        const trimmed = data.image_urls.trim();
+        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || trimmed.startsWith('{')) {
+          try {
+            data.image_urls = JSON.parse(trimmed);
+          } catch (jsonErr) {
+            console.warn('Could not parse image_urls JSON string:', jsonErr);
+          }
+        }
+      }
+    } catch (normErr) {
+      console.warn('Error normalizing upstream response fields', normErr);
+    }
 
     console.log('Edit API response:', data);
 
@@ -39,7 +125,8 @@ export async function PUT(
       return NextResponse.json(
         {
           status: false,
-          message: data.message || 'Failed to update product',
+          message: data.message || `Failed to update product (${response.status})`,
+          upstream: data,
         },
         { status: response.status || 500 }
       );

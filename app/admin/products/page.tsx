@@ -53,7 +53,11 @@ export default function ProductsPage() {
             stock: parseInt(product.stock) || 0,
             category: product.category || '',
             description: product.description || '',
+            // keep legacy comma-string for table cell rendering
             image: fullImageUrls.join(','),
+            // include array form so edit forms can read product.image_urls
+            image_urls: fullImageUrls,
+            customizable: product.customizable !== undefined ? Number(product.customizable) : 0,
             subcategory: product.subcategory || '',
             sku: product.sku || '',
             status: product.status || 'active',
@@ -182,6 +186,7 @@ export default function ProductsPage() {
     formData.append('description', product.description || '');
 
     formData.append('status', product.status || 'active');
+    formData.append('customizable', String(product.customizable || 0));
 
     return formData;
   };

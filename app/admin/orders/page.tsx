@@ -14,6 +14,7 @@ import { DataTable } from '@/components/admin/data-table';
 
 import { StatusBadge } from '@/components/admin/status-badge';
 
+
 interface Order {
   id: string;
   customerName: string;
@@ -70,13 +71,13 @@ export default function OrdersPage() {
             ),
 
             customerName:
-              order.customer_name ||
+              order.shipping_name ||
               order.name ||
               'Unknown User',
 
             customerEmail:
-              order.customer_email ||
               order.email ||
+              order.customer_email ||
               'No Email',
 
             date:
