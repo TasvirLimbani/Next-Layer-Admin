@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         "Cache-Control": "public, max-age=86400",
       },
     });
-  } catch (error) { 
+  } catch (error) {
     return NextResponse.json(
       { error: "Proxy error" },
       { status: 500 }

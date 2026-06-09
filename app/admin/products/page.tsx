@@ -37,12 +37,12 @@ export default function ProductsPage() {
         const mappedProducts = rawProducts.map((product: any) => {
           // Handle both single image and multiple images
           // Use image_urls directly from API
-   const fullImageUrls =
-  Array.isArray(product.image_urls)
-    ? product.image_urls
-    : typeof product.image_urls === 'string'
-    ? product.image_urls.split(',').map(i => i.trim())
-    : [];
+          const fullImageUrls =
+            Array.isArray(product.image_urls)
+              ? product.image_urls
+              : typeof product.image_urls === 'string'
+                ? product.image_urls.split(',').map(i => i.trim())
+                : [];
 
           console.log(
             `Product "${product.product_name}" - fullImageUrls:`,
@@ -331,12 +331,7 @@ export default function ProductsPage() {
                               <img
                                 src={`/api/image-proxy?url=${encodeURIComponent(imageUrls[0])}`}
                                 alt="Product"
-                                className="h-10 w-10 rounded object-cover border border-slate-200 cursor-pointer"
-                                onError={(e) => {
-                                  console.error('Image load error:', imageUrls[0]);
-                                  (e.target as HTMLImageElement).src =
-                                    'https://placehold.co/40x40?text=No+Image';
-                                }}
+                                className="h-10 w-10 rounded object-cover border border-slate-200"
                               />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors rounded">
                                 <svg className="w-3 h-3 text-white opacity-0 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20">
