@@ -214,7 +214,7 @@ export default function FilamentPage() {
                               className="relative overflow-hidden rounded-lg"
                             >
                               <img
-                                src={firstImage || 'https://placehold.co/64x64?text=No+Image'}
+                                src={`/api/image-proxy?url=${encodeURIComponent(firstImage || 'https://placehold.co/64x64?text=No+Image')}`}
                                 alt={item.title || 'Filament image'}
                                 loading="lazy"
                                 className="h-16 w-16 rounded-lg object-cover"
@@ -302,7 +302,7 @@ export default function FilamentPage() {
 
             <div className="relative w-full bg-black rounded-lg overflow-hidden">
               <img
-                src={lightboxImages[lightboxIndex]}
+                src={`/api/image-proxy?url=${encodeURIComponent(lightboxImages[lightboxIndex])}`}
                 alt={`Filament image ${lightboxIndex + 1}`}
                 className="w-full h-auto max-h-[80vh] object-contain"
                 onError={(e) => {

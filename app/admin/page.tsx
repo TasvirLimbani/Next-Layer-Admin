@@ -100,16 +100,13 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-8 text-white shadow-md">
-        <h1 className="text-3xl font-bold mb-2">Welcome back! 👋</h1>
-        <p className="text-blue-100">Here's what's happening with your store today.</p>
-      </div>
+     
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
+          value={`₹${totalRevenue.toFixed(2)}`}
           icon={DollarSign}
           trend={revenueGrowth}
           trendLabel="12.5% from last month"
@@ -175,7 +172,7 @@ export default function DashboardPage() {
                 key: 'total',
                 label: 'Total',
                 render: (value) => (
-                  <span className="font-semibold text-slate-900">${(value as number).toFixed(2)}</span>
+                  <span className="font-semibold text-slate-900">₹{(value as number).toFixed(2)}</span>
                 ),
               },
               {

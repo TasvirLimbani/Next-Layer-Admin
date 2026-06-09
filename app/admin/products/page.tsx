@@ -276,7 +276,7 @@ export default function ProductsPage() {
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
             <p className="text-sm font-medium text-slate-600">Total Value</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">
-              $
+              ₹ 
               {products
                 .reduce((sum, p) => {
                   const price = parseFloat(String(p.price)) || 0;
@@ -329,7 +329,7 @@ export default function ProductsPage() {
                               className="relative group overflow-hidden rounded hover:opacity-75 transition-opacity"
                             >
                               <img
-                                src={imageUrls[0]}
+                                src={`/api/image-proxy?url=${encodeURIComponent(imageUrls[0])}`}
                                 alt="Product"
                                 className="h-10 w-10 rounded object-cover border border-slate-200 cursor-pointer"
                                 onError={(e) => {
@@ -376,7 +376,7 @@ export default function ProductsPage() {
                   key: 'price',
                   label: 'Price',
                   render: (value) => (
-                    <span className="font-semibold text-slate-900">${(Number(value) || 0).toFixed(2)}</span>
+                    <span className="font-semibold text-slate-900">₹{(Number(value) || 0).toFixed(2)}</span>
                   ),
                 },
                 {

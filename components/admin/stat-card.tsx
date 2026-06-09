@@ -66,9 +66,9 @@ export function StatCard({
             </div>
           )}
         </div>
-        <div className={`rounded-lg p-4 ${colors.icon}`}>
+        {/* <div className={`rounded-lg p-4 ${colors.icon}`}>
           <Icon className={`h-6 w-6 ${colors.text}`} />
-        </div>
+        </div> */}
       </div>
       <div className="mt-4 h-1 w-full bg-slate-200 rounded-full overflow-hidden">
         <div className={`h-full w-3/4 bg-gradient-to-r ${colors.gradient}`} />
