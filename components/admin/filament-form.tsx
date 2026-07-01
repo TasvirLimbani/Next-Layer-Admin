@@ -75,7 +75,7 @@ export function FilamentForm({
 
     setLoading(true);
 
-   const formData = new FormData();
+    const formData = new FormData();
 
     if (filament?.id) {
       formData.append('id', filament.id);
@@ -121,7 +121,7 @@ export function FilamentForm({
       form.sku
     );
 
-     formData.append(
+    formData.append(
       'delete_images',
       JSON.stringify(deletedImages)
     );
@@ -159,10 +159,10 @@ export function FilamentForm({
         }
       );
 
-      const data =
-        await response.json();
+    const data =
+      await response.json();
 
-      alert(data.message);
+    alert(data.message);
 
     setLoading(false);
 
@@ -225,7 +225,7 @@ export function FilamentForm({
                       <div key={url + idx} className="inline-block mr-2 relative">
                         <div className="h-20 w-20 rounded overflow-hidden border bg-white shadow-sm">
                           <img
-                            src={url}
+                            src={`/api/image-proxy?url=${encodeURIComponent(url)}`}
                             alt={`existing-${idx}`}
                             className="h-full w-full object-cover"
                             onError={(e) => ((e.target as HTMLImageElement).src = 'https://placehold.co/80x80?text=No+Image')}
@@ -241,12 +241,12 @@ export function FilamentForm({
                         <div className="mt-2 flex gap-2 justify-center">
                           <button
                             type="button"
-                             onClick={() => {
-                      setDeletedImages((prev) => [...prev, url]);
-                      setExistingImages((prev) =>
-                        prev.filter((_, i) => i !== idx)
-                      );
-                    }}
+                            onClick={() => {
+                              setDeletedImages((prev) => [...prev, url]);
+                              setExistingImages((prev) =>
+                                prev.filter((_, i) => i !== idx)
+                              );
+                            }}
                             title="Remove image"
                             className="flex items-center gap-1 text-xs px-2 py-1 bg-red-50 text-red-600 rounded"
                           >

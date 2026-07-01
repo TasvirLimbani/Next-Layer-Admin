@@ -276,7 +276,11 @@ export default function ProductsPage() {
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
             <p className="text-sm font-medium text-slate-600">Total Value</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">
+<<<<<<< HEAD
               ₹
+=======
+              ₹ 
+>>>>>>> 2b43525159edf5f9398e73b810a3543a4f0dad00
               {products
                 .reduce((sum, p) => {
                   const price = parseFloat(String(p.price)) || 0;

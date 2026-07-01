@@ -456,7 +456,7 @@ const handleRemoveImage = (index: number) => {
                   ? imagePreviews.map((url, idx) => (
                     <div key={url + idx} className="inline-block mr-2 relative">
                       <div className="h-24 w-28 rounded overflow-hidden border bg-white shadow-sm">
-                        <img src={url} alt={`preview-${idx}`} className="h-full w-full object-cover" />
+                        <img src={`/api/image-proxy?url=${encodeURIComponent(url)}`} alt={`preview-${idx}`} className="h-full w-full object-cover" />
                       </div>
 
                       <div className="absolute -top-2 -left-2 bg-yellow-400 rounded-full p-1 shadow flex items-center justify-center">
