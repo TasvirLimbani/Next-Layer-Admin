@@ -109,12 +109,9 @@ export default function DashboardPage() {
         <StatCard
           title="Total Revenue"
           value={`₹${totalRevenue.toFixed(2)}`}
-<<<<<<< HEAD
+
           icon={IndianRupee}
-=======
-          icon={DollarSign}
->>>>>>> 2b43525159edf5f9398e73b810a3543a4f0dad00
-          trend={revenueGrowth}
+
           trendLabel="12.5% from last month"
           color="blue"
         />

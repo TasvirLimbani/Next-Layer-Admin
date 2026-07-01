@@ -232,11 +232,9 @@ export default function OrdersPage() {
           </p>
 
           <p className="mt-2 text-3xl font-bold text-slate-900">
-<<<<<<< HEAD
+
             ₹
-=======
-              ₹
->>>>>>> 2b43525159edf5f9398e73b810a3543a4f0dad00
+
             {avgOrderValue.toLocaleString(
               'en-US',
               {
@@ -331,11 +329,9 @@ export default function OrdersPage() {
 
                 render: (value) => (
                   <span className="font-semibold text-slate-900">
-<<<<<<< HEAD
+
                     ₹
-=======
-                      ₹
->>>>>>> 2b43525159edf5f9398e73b810a3543a4f0dad00
+
                     {Number(
                       value || 0
                     ).toLocaleString(
