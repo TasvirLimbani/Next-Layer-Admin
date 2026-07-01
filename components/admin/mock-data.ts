@@ -71,4 +71,3 @@ export interface User {
   createdDate: string;
 }
 
-// Mock Products

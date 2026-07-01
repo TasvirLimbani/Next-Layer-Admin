@@ -28,12 +28,7 @@ interface ProductFormProps {
 }
 
 const categories = [
-  'Electronics',
-  'Accessories',
-  'Clothing',
-  'Home',
-  'Sports',
-  'Toy',
+'Keychains',
 ];
 
 export function ProductForm({

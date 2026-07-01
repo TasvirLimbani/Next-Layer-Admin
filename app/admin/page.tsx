@@ -1,11 +1,13 @@
 'use client';
 
-import { DollarSign, Package, ShoppingCart, Users, TrendingUp, Eye, AlertCircle } from 'lucide-react';
+import {IndianRupee,  Package, ShoppingCart, Users, TrendingUp, Eye, AlertCircle } from 'lucide-react';
 import { StatCard } from '@/components/admin/stat-card';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
+
 
 interface Order {
   id: string;
@@ -109,8 +111,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
-          icon={DollarSign}
+          value={`₹${totalRevenue.toFixed(2)}`}
+          icon={IndianRupee}
           trend={revenueGrowth}
           trendLabel="12.5% from last month"
           color="blue"
@@ -175,7 +177,7 @@ export default function DashboardPage() {
                 key: 'total',
                 label: 'Total',
                 render: (value) => (
-                  <span className="font-semibold text-slate-900">${(value as number).toFixed(2)}</span>
+                  <span className="font-semibold text-slate-900">₹{(value as number).toFixed(2)}</span>
                 ),
               },
               {

@@ -41,7 +41,7 @@ export default function ProductsPage() {
             Array.isArray(product.image_urls)
               ? product.image_urls
               : typeof product.image_urls === 'string'
-                ? product.image_urls.split(',').map(i => i.trim())
+                ? product.image_urls.split(',').map((i: string) => i.trim())
                 : [];
 
           console.log(
@@ -276,7 +276,7 @@ export default function ProductsPage() {
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
             <p className="text-sm font-medium text-slate-600">Total Value</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">
-              $
+              ₹
               {products
                 .reduce((sum, p) => {
                   const price = parseFloat(String(p.price)) || 0;
@@ -371,7 +371,7 @@ export default function ProductsPage() {
                   key: 'price',
                   label: 'Price',
                   render: (value) => (
-                    <span className="font-semibold text-slate-900">${(Number(value) || 0).toFixed(2)}</span>
+                    <span className="font-semibold text-slate-900">₹{(Number(value) || 0).toFixed(2)}</span>
                   ),
                 },
                 {
