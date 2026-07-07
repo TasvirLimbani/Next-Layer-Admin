@@ -6,6 +6,168 @@ import { DataTable } from '@/components/admin/data-table';
 import { ProductForm } from '@/components/admin/product-form';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { Product } from '@/components/admin/mock-data';
+import { normalizeProductImageUrls, normalizeProductImages } from '@/lib/utils';
+
+type ProductImageGroup = {
+  color: string;
+  images: string[];
+};
+
+function getPreviewSrc(url: string) {
+  if (url.startsWith('blob:') || url.startsWith('data:')) {
+    return url;
+  }
+
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+function ProductImageCell({
+  product,
+  onOpenLightbox,
+}: {
+  product: any;
+  onOpenLightbox: (imageUrls: string[], index?: number) => void;
+}) {
+  const imageGroups = normalizeProductImageGroups({
+    ...product,
+    variants: product.variants || product.images || [],
+  });
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+
+  const safeActiveGroupIndex = Math.min(
+    activeGroupIndex,
+    Math.max(imageGroups.length - 1, 0)
+  );
+
+  const activeGroup = imageGroups[safeActiveGroupIndex] || imageGroups[0];
+  const activeImages = activeGroup?.images || [];
+  const activeImage = activeImages[0] || '';
+  const extraCount = Math.max(activeImages.length - 4, 0);
+
+  useEffect(() => {
+    setActiveGroupIndex(0);
+  }, [product?.id]);
+
+  if (imageGroups.length === 0) {
+    return (
+      <div className="flex h-24 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400">
+        No image
+      </div>
+    );
+  }
+  const previewImage =
+    activeImages?.length > 0
+      ? getPreviewSrc(activeImages[0])
+      : "/placeholder.svg";
+
+  return (
+    <div className="w-full max-w-60 rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <button
+        type="button"
+        onClick={() => onOpenLightbox(activeImages, 0)}
+        className="block w-full p-2 text-left"
+      >
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+          <div className="aspect-square w-full bg-slate-100">
+            <img
+              src={previewImage}
+              alt={`${activeGroup?.color || "Product"}-primary`}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "/placeholder.svg";
+              }}
+            />
+          </div>
+        </div>
+      </button>
+
+      <div className="px-2 pb-2">
+        <div className="grid grid-cols-3 gap-2">
+          {activeImages.slice(1, 5).map((imageUrl, index) => (
+            <button
+              key={`${imageUrl}-${index}`}
+              type="button"
+              onClick={() => onOpenLightbox(activeImages, index + 1)}
+              className="overflow-hidden rounded-md border border-slate-200 bg-slate-100"
+            >
+              <div className="aspect-square w-full">
+                <img
+                  src={getPreviewSrc(imageUrl)}
+                  alt={`${activeGroup?.color || 'Product'}-${index + 2}`}
+                  className="h-full w-full object-cover"
+                  onError={(event) => {
+                    (event.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
+                />
+              </div>
+            </button>
+          ))}
+
+          {extraCount > 0 && (
+            <button
+              type="button"
+              onClick={() => onOpenLightbox(activeImages, 0)}
+              className="flex aspect-square items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold text-slate-500"
+            >
+              +{extraCount}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function normalizeProductImageGroups(product: any): ProductImageGroup[] {
+  const groups: ProductImageGroup[] = [];
+
+  // Support API response: variants
+  if (Array.isArray(product?.variants)) {
+    product.variants.forEach((variant: any, index: number) => {
+      const images =
+        variant.image_urls?.length > 0
+          ? variant.image_urls
+          : variant.images || [];
+
+      if (images.length > 0) {
+        groups.push({
+          color: variant.color || `Color ${index + 1}`,
+          images,
+        });
+      }
+    });
+  }
+
+  // Support old response: images
+  if (groups.length === 0 && Array.isArray(product?.images)) {
+    product.images.forEach((group: any, index: number) => {
+      const images = group.image_urls?.length
+        ? group.image_urls
+        : group.images || [];
+
+      if (images.length > 0) {
+        groups.push({
+          color: group.color || `Color ${index + 1}`,
+          images,
+        });
+      }
+    });
+  }
+
+  // Fallback
+  if (groups.length === 0) {
+    const fallbackImages = normalizeProductImageUrls(product);
+
+    if (fallbackImages.length > 0) {
+      groups.push({
+        color: "Default",
+        images: fallbackImages,
+      });
+    }
+  }
+
+  return groups;
+}
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,6 +179,7 @@ export default function ProductsPage() {
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [selectedColors, setSelectedColors] = useState<string[] | null>(null);
 
   // Fetch products on mount
   useEffect(() => {
@@ -35,14 +198,8 @@ export default function ProductsPage() {
 
         // Map API response to Product interface
         const mappedProducts = rawProducts.map((product: any) => {
-          // Handle both single image and multiple images
-          // Use image_urls directly from API
-          const fullImageUrls =
-            Array.isArray(product.image_urls)
-              ? product.image_urls
-              : typeof product.image_urls === 'string'
-                ? product.image_urls.split(',').map((i: string) => i.trim())
-                : [];
+          const normalizedProduct = normalizeProductImages(product);
+          const fullImageUrls = normalizeProductImageUrls(normalizedProduct);
 
           console.log(
             `Product "${product.product_name}" - fullImageUrls:`,
@@ -60,9 +217,22 @@ export default function ProductsPage() {
             image: fullImageUrls.join(','),
             // include array form so edit forms can read product.image_urls
             image_urls: fullImageUrls,
+            variants: product.variants || [],
+
+            images:
+              product.variants?.map((v: any) => ({
+                color: v.color,
+                image_urls: v.image_urls || [],
+              })) || [],
             customizable: product.customizable !== undefined ? Number(product.customizable) : 0,
+            image_customizable: product.image_customizable !== undefined ? Number(product.image_customizable) : 0,
             subcategory: product.subcategory || '',
             sku: product.sku || '',
+            color: Array.isArray(product.variants)
+              ? product.variants
+                .map((v: any) => v.color)
+                .filter(Boolean)
+              : [],
             status: product.status || 'active',
             created_at: product.created_at || '',
           };
@@ -85,7 +255,8 @@ export default function ProductsPage() {
 
   const handleAddProduct = async (product: Product, formData?: FormData) => {
     try {
-      const requestData = formData || createFormData(product);
+const requestData =
+    formData ?? createFormData(product); 
       console.log('Adding product:', product);
 
       const response = await fetch('/api/products', {
@@ -112,7 +283,8 @@ export default function ProductsPage() {
 
   const handleUpdateProduct = async (product: Product, formData?: FormData) => {
     try {
-      const requestData = formData || createFormData(product);
+const requestData =
+    formData ?? createFormData(product);
       console.log('Updating product:', product.id, requestData);
 
       const response = await fetch(`/api/products/${product.id}`, {
@@ -172,27 +344,90 @@ export default function ProductsPage() {
     }
   };
 
-  const createFormData = (product: Product): FormData => {
-    const formData = new FormData();
+const createFormData = (product:any)=>{
 
-    // REQUIRED
-    formData.append('id', String(product.id));
+    const fd=new FormData();
 
-    formData.append('product_name', product.name || '');
-    formData.append('category', product.category || '');
-    formData.append('subcategory', product.subcategory || '');
-    formData.append('sku', product.sku || '');
+    fd.append("product_name",product.name);
+    fd.append("category",product.category);
+    fd.append("subcategory",product.subcategory);
+    fd.append("sku",product.sku);
+    fd.append("price",String(product.price));
+    fd.append("stock",String(product.stock));
+    fd.append("description",product.description);
+    fd.append("status",product.status);
+    fd.append("customizable",String(product.customizable));
+    fd.append("image_customizable",String(product.image_customizable));
 
-    formData.append('price', String(product.price || 0));
-    formData.append('stock', String(product.stock || 0));
+    if(product.id){
+        fd.append("product_id",String(product.id));
+    }
 
-    formData.append('description', product.description || '');
+    product.variants?.forEach((variant:any,index:number)=>{
 
-    formData.append('status', product.status || 'active');
-    formData.append('customizable', String(product.customizable || 0));
+        fd.append(
+            `variants[${index}][color]`,
+            variant.color
+        );
 
-    return formData;
-  };
+        variant.files?.forEach((file:File)=>{
+
+            fd.append(
+                `variants[${index}][images][]`,
+                file
+            );
+
+        });
+
+    });
+
+    return fd;
+}
+
+//   const createFormData = (product: any): FormData => {
+//     const formData = new FormData();
+
+//     formData.append("product_id", product.id);
+//     formData.append("product_name", product.name);
+//     formData.append("category", product.category);
+//     formData.append("subcategory", product.subcategory);
+//     formData.append("sku", product.sku);
+//     formData.append("price", String(product.price));
+//     formData.append("stock", String(product.stock));
+//     formData.append("description", product.description);
+//     formData.append("status", product.status);
+
+//     // Variants
+//     product.variants?.forEach((variant: any, index: number) => {
+//       formData.append(`variants[${index}][color]`, variant.color);
+
+//       // New uploaded files
+//   variant.items?.forEach((item:any)=>{
+
+//     if(item.kind==="new" && item.file){
+
+//         formData.append(
+//             `variants[${index}][images][]`,
+//             item.file,
+//             item.file.name
+//         );
+
+//     }
+
+//     if(item.kind==="existing"){
+
+//         formData.append(
+//             `variants[${index}][existing_images][]`,
+//             item.src.split('/').pop() || item.src
+//         );
+
+//     }
+
+// });
+//     });
+
+//     return formData;
+//   };
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -259,7 +494,7 @@ export default function ProductsPage() {
               setEditingProduct(undefined);
               setShowForm(true);
             }}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 font-medium text-white hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+            className="flex items-center gap-2 rounded-lg bg-linear-to-r from-blue-600 to-blue-700 px-6 py-3 font-medium text-white hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all"
           >
             <Plus className="h-5 w-5" />
             Add New Product
@@ -313,50 +548,35 @@ export default function ProductsPage() {
                 {
                   key: 'image',
                   label: 'Image',
-                  render: (value) => {
-                    // Parse multiple images from comma-separated string
-                    const imageUrls = value && typeof value === 'string'
-                      ? value
-                        .split(',')
-                        .map((img: string) => img.trim())
-                        .filter((img: string) => img.length > 0)
-                      : [];
+                  render: (_value, item) => {
+                    return (
+                      <div className="max-w-65">
+                        <ProductImageCell product={item} onOpenLightbox={openLightbox} />
+                      </div>
+                    );
+                  },
+                },
+                {
+                  key: "color",
+                  label: "COLOR",
+                  render: (_: any, item: any) => {
+                    const colors =
+                      item.variants?.map((v: any) => v.color).filter(Boolean) || [];
+
+                    if (!colors.length) {
+                      return <span className="text-slate-500">N/A</span>;
+                    }
 
                     return (
-                      <div className="flex items-center gap-2">
-                        {imageUrls.length > 0 ? (
-                          <>
-                            <button
-                              onClick={() => openLightbox(imageUrls, 0)}
-                              className="relative group overflow-hidden rounded hover:opacity-75 transition-opacity"
-                            >
-                              <img
-                                src={`/api/image-proxy?url=${encodeURIComponent(imageUrls[0])}`}
-                                alt="Product"
-                                className="h-10 w-10 rounded object-cover border border-slate-200"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors rounded">
-                                <svg className="w-3 h-3 text-white opacity-0 group-hover:opacity-100" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                            </button>
-                            {imageUrls.length > 1 && (
-                              <button
-                                onClick={() => openLightbox(imageUrls, 0)}
-                                className="text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded px-2 py-1 cursor-pointer transition-colors"
-                              >
-                                +{imageUrls.length - 1}
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <div className="h-10 w-10 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs">
-                            No
-                          </div>
+                      <button
+                        onClick={() => setSelectedColors(colors)}
+                        className="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700"
+                      >
+                        <span>{colors[0]}</span>
+                        {colors.length > 1 && (
+                          <span>+{colors.length - 1}</span>
                         )}
-                      </div>
+                      </button>
                     );
                   },
                 },
@@ -379,9 +599,19 @@ export default function ProductsPage() {
                 {
                   key: 'subcategory',
                   label: 'Subcategory',
-                  render: (value) => value || <span className="text-slate-500">N/A</span>,
+                  render: (value) => {
+                    const text = typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+                    return text || <span className="text-slate-500">N/A</span>;
+                  },
                 },
-                { key: 'sku', label: 'SKU', render: (value) => value || <span className="text-slate-500">N/A</span> },
+                {
+                  key: 'sku',
+                  label: 'SKU',
+                  render: (value) => {
+                    const text = typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+                    return text || <span className="text-slate-500">N/A</span>;
+                  },
+                },
                 {
                   key: 'stock',
                   label: 'Stock',
@@ -491,6 +721,35 @@ export default function ProductsPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Color Modal */}
+      {selectedColors && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-sm w-full">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">All Colors</h3>
+              <button
+                onClick={() => setSelectedColors(null)}
+                className="text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex flex-wrap gap-2">
+                {selectedColors.map((color: string, index: number) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                  >
+                    {color}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

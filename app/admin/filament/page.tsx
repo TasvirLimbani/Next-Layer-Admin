@@ -195,10 +195,10 @@ export default function FilamentPage() {
                 const imageUrls = Array.isArray(item.images)
                   ? item.images
                   : typeof item.images === 'string'
-                    ? item.images
+                    ? (item.images as string)
                       .split(',')
-                      .map((s) => s.trim())
-                      .filter((s) => s.length > 0)
+                      .map((s: string) => s.trim())
+                      .filter((s: string) => s.length > 0)
                     : [];
 
                 const firstImage = imageUrls[0] || '';

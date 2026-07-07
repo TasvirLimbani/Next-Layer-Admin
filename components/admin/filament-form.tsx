@@ -121,10 +121,12 @@ export function FilamentForm({
       form.sku
     );
 
-    formData.append(
-      'delete_images',
-      JSON.stringify(deletedImages)
+if(product){
+    apiFormData.append(
+        "delete_images",
+        JSON.stringify(deletedImages)
     );
+}
     // include kept existing image URLs (so backend can keep them)
     if (existingImages && existingImages.length > 0) {
       existingImages.forEach((url) => formData.append('existing_images[]', url));

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { normalizeProductImageUrls, normalizeProductImages } from '@/lib/utils';
 
 // GET - List all products
 export async function GET() {
@@ -26,9 +27,26 @@ export async function GET() {
 
     const data = await response.json();
 
+    const rawProducts = Array.isArray(data.products)
+      ? data.products
+      : data.products
+        ? [data.products]
+        : Array.isArray(data)
+          ? data
+          : [data];
+
+    const products = rawProducts.map((product) => {
+      const normalizedProduct = normalizeProductImages(product);
+
+      return {
+        ...normalizedProduct,
+        image_urls: normalizeProductImageUrls(normalizedProduct),
+      };
+    });
+
     return NextResponse.json({
       status: true,
-      products: data.products || data,
+      products: Array.isArray(data.products) ? products : products[0],
     });
   } catch (error) {
     console.error('Products List API Error:', error);
@@ -139,6 +157,9 @@ export async function POST(request: NextRequest) {
       console.warn('Error normalizing add.php response fields', normErr);
     }
 
+    const product = data.product || data;
+    const normalizedProduct = normalizeProductImages(product);
+
     if (!response.ok || data.status === false) {
       return NextResponse.json(
         { status: false, message: data.message || 'Failed to add product', upstream: data },
@@ -146,7 +167,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ status: data.status || true, message: data.message || 'Product added successfully', product: data.product || data });
+    return NextResponse.json({ status: data.status || true, message: data.message || 'Product added successfully', product: normalizedProduct });
   } catch (error) {
     console.error('Products Add API Error:', error);
 

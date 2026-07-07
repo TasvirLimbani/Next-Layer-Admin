@@ -3,6 +3,7 @@
 export interface Product {
   id: string;
   name: string;
+  color: string | string[];
   price: number | string;
   stock: number | string;
   category: string;
@@ -12,8 +13,13 @@ export interface Product {
   sku?: string;
   status?: string;
   customizable?: number;
+  image_customizable?: number;
   created_at?: string;
   image_urls?: string[];
+  images?: Array<{
+    color?: string;
+    images?: string[];
+  }>;
 }
 
 
@@ -27,7 +33,7 @@ export interface Filament {
   sku: string;
 
   slug: string;
-
+  
   colour: string[];
 
   diameter: string[];

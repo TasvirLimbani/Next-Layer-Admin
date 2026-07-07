@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { normalizeProductImages } from '@/lib/utils';
 
 interface RouteContext {
   params: Promise<{
@@ -119,6 +120,9 @@ export async function PUT(
       console.warn('Error normalizing upstream response fields', normErr);
     }
 
+    const product = data.product || data;
+    const normalizedProduct = normalizeProductImages(product);
+
     console.log('Edit API response:', data);
 
     if (!response.ok || data.status === false) {
@@ -135,7 +139,7 @@ export async function PUT(
     return NextResponse.json({
       status: true,
       message: data.message || 'Product updated successfully',
-      product: data.product || data,
+      product: normalizedProduct,
     });
   } catch (error) {
     console.error('PUT Error:', error);

@@ -24,7 +24,7 @@ export function DataTable<T extends Record<string, any>>({
     <div className="overflow-x-auto rounded-lg">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+          <tr className="border-b border-slate-200 bg-linear-to-r from-slate-50 to-slate-100">
             {columns.map((column) => (
               <th
                 key={String(column.key)}
