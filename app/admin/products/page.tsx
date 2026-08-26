@@ -281,34 +281,93 @@ const requestData =
     }
   };
 
-  const handleUpdateProduct = async (product: Product, formData?: FormData) => {
-    try {
-const requestData =
-    formData ?? createFormData(product);
-      console.log('Updating product:', product.id, requestData);
+const handleUpdateProduct = async (
+  product: Product,
+  formData?: FormData
+) => {
+  try {
+    const requestData = formData ?? createFormData(product);
 
-      const response = await fetch(`/api/products/${product.id}`, {
-        method: 'PUT',
-        body: requestData,
-      });
-
-      const data = await response.json();
-      console.log('Update response:', data);
-
-      if (data.status) {
-        // Refresh products list to get updated data
-        await fetchProducts();
-        setEditingProduct(undefined);
-        setShowForm(false);
-        setError(null);
-      } else {
-        setError(data.message || 'Failed to update product');
-      }
-    } catch (err) {
-      setError('Error updating product');
-      console.error(err);
+    // Make sure required fields are always present
+    if (!requestData.has('product_id')) {
+      requestData.append('product_id', String(product.id));
     }
-  };
+
+    if (!requestData.has('product_name')) {
+      requestData.append('product_name', product.name || '');
+    }
+
+    if (!requestData.has('category')) {
+      requestData.append('category', product.category || '');
+    }
+
+    if (!requestData.has('subcategory')) {
+      requestData.append('subcategory', product.subcategory || '');
+    }
+
+    if (!requestData.has('sku')) {
+      requestData.append('sku', product.sku || '');
+    }
+
+    if (!requestData.has('price')) {
+      requestData.append('price', String(product.price ?? ''));
+    }
+
+    if (!requestData.has('stock')) {
+      requestData.append('stock', String(product.stock ?? ''));
+    }
+
+    if (!requestData.has('description')) {
+      requestData.append('description', product.description || '');
+    }
+
+    if (!requestData.has('status')) {
+      requestData.append('status', product.status || 'active');
+    }
+
+    if (!requestData.has('customizable')) {
+      requestData.append(
+        'customizable',
+        String(product.customizable ?? 0)
+      );
+    }
+
+    if (!requestData.has('image_customizable')) {
+      requestData.append(
+        'image_customizable',
+        String(product.image_customizable ?? 0)
+      );
+    }
+
+    // Debug FormData
+    console.log('UPDATE PRODUCT DATA:');
+
+    for (const [key, value] of requestData.entries()) {
+      console.log(key, value);
+    }
+
+    const response = await fetch(`/api/products/${product.id}`, {
+      method: 'PUT',
+      body: requestData,
+    });
+
+    const data = await response.json();
+
+    console.log('Update response:', data);
+
+    if (data.status) {
+      await fetchProducts();
+      setEditingProduct(undefined);
+      setShowForm(false);
+      setError(null);
+    } else {
+      setError(data.message || 'Failed to update product');
+    }
+  } catch (err) {
+    setError('Error updating product');
+    console.error(err);
+  }
+};
 
   const handleDeleteProduct = async () => {
     if (deleteId) {
@@ -585,10 +644,37 @@ const createFormData = (product:any)=>{
                   label: 'Product Name',
                   className: 'max-w-xs',
                 },
-                {
-                  key: 'category',
-                  label: 'Category',
-                },
+              {
+  key: 'category',
+  label: 'Category',
+  render: (value) => {
+    // Handle string/number
+    if (typeof value === 'string' || typeof value === 'number') {
+      const text = String(value).trim();
+
+      return text ? (
+        text
+      ) : (
+        <span className="text-slate-500">N/A</span>
+      );
+    }
+
+    // Handle object like { name: "Keychains" }
+    if (value && typeof value === 'object') {
+      const category = value as { name?: string; category?: string };
+
+      const text = category.name || category.category || '';
+
+      return text ? (
+        text
+      ) : (
+        <span className="text-slate-500">N/A</span>
+      );
+    }
+
+    return <span className="text-slate-500">N/A</span>;
+  },
+},
                 {
                   key: 'price',
                   label: 'Price',

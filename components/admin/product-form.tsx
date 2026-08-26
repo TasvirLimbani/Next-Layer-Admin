@@ -167,6 +167,9 @@ export function ProductForm({
           stock:
             Number(product.stock) || 0,
 
+            category:
+            product.category || '',
+
           subcategory:
             product.subcategory || '',
 
@@ -198,8 +201,7 @@ export function ProductForm({
 
           color: [],
 
-          category:
-            '',
+          category: '',
 
           subcategory: '',
 
@@ -891,7 +893,7 @@ export function ProductForm({
 
             </label>
 
-            <select
+            {/* <select
               name="category"
               value={formData.category}
               onChange={handleChange}
@@ -909,7 +911,29 @@ export function ProductForm({
 
               ))}
 
-            </select>
+            </select> */}
+
+            <select
+  value={formData.category || ''}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    console.log('Selected Category:', value);
+
+    setFormData((prev) => ({
+      ...prev,
+      category: value,
+    }));
+  }}
+>
+  <option value="">Select Category</option>
+
+  {categories.map((category) => (
+    <option key={category} value={category}>
+      {category}
+    </option>
+  ))}
+</select>
           </div>
 
           {/* SUBCATEGORY */}
