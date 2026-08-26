@@ -199,7 +199,7 @@ export function ProductForm({
           color: [],
 
           category:
-            'Electronics',
+            '',
 
           subcategory: '',
 
