@@ -1584,60 +1584,91 @@ export default function ProductsPage() {
      ADD PRODUCT
   ======================================================= */
 
-  const handleAddProduct = async (
-    product: Product,
-    formData?: FormData
-  ) => {
-    try {
-      const requestData =
-        formData ??
-        createFormData(product);
+const handleAddProduct = async (
+  data: Product,
+  formData?: FormData
+) => {
+  if (!formData) {
+    throw new Error(
+      'Product data is missing.'
+    );
+  }
 
-      console.log(
-        'Adding product:',
-        product
-      );
-
-      const response =
-        await fetch(
-          '/api/products',
-          {
-            method: 'POST',
-            body: requestData,
-          }
-        );
-
-      const data =
-        await response.json();
-
-      console.log(
-        'Add response:',
-        data
-      );
-
-      if (data.status) {
-        await fetchProducts();
-
-        setShowForm(false);
-
-        setError(null);
-      } else {
-        setError(
-          data.message ||
-            'Failed to add product'
-        );
+  try {
+    const response = await fetch(
+      '/api/products',
+      {
+        method: 'POST',
+        body: formData,
       }
-    } catch (err) {
-      console.error(
-        'ADD PRODUCT ERROR:',
-        err
-      );
+    );
 
-      setError(
-        'Error adding product'
+    // Try to read JSON regardless of HTTP status
+    let result: any = null;
+
+    try {
+      result = await response.json();
+    } catch {
+      result = null;
+    }
+
+    console.log(
+      'ADD PRODUCT RESPONSE:',
+      result
+    );
+
+    // ========================================
+    // HTTP ERROR
+    // ========================================
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+        result?.error ||
+        `Error adding product (${response.status})`
       );
     }
-  };
+
+    // ========================================
+    // API ERROR
+    // ========================================
+
+    if (
+      result?.success === false ||
+      result?.status === false
+    ) {
+      throw new Error(
+        result?.message ||
+        result?.error ||
+        result?.data?.message ||
+        'Error adding product.'
+      );
+    }
+
+    // ========================================
+    // SUCCESS
+    // ========================================
+
+    await fetchProducts();
+
+    // Close ONLY after successful API response
+    setShowForm(false);
+
+  } catch (error: any) {
+    console.error(
+      'Add product error:',
+      error
+    );
+
+    // VERY IMPORTANT:
+    // Do NOT set the page error here.
+    // Throw it back to ProductForm.
+    throw new Error(
+      error?.message ||
+      'Error adding product.'
+    );
+  }
+};
 
   /* =======================================================
      UPDATE PRODUCT

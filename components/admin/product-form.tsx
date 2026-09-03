@@ -2747,405 +2747,291 @@ export function ProductForm({
      SUBMIT
   ======================================================= */
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // Clear previous error
+  setFormError('');
+
+  // ================================
+  // VALIDATION
+  // ================================
+
+  if (!formData.name?.trim()) {
+    setFormError('Please enter the product name.');
+    return;
+  }
+
+  if (!formData.category?.trim()) {
+    setFormError('Please select a product category.');
+    return;
+  }
+
+  if (
+    formData.price === undefined ||
+    formData.price === null ||
+    Number.isNaN(Number(formData.price)) ||
+    Number(formData.price) < 0
+  ) {
+    setFormError('Please enter a valid product price.');
+    return;
+  }
+
+  if (
+    formData.stock === undefined ||
+    formData.stock === null ||
+    Number.isNaN(Number(formData.stock)) ||
+    Number(formData.stock) < 0
+  ) {
+    setFormError('Please enter a valid stock quantity.');
+    return;
+  }
+
+  // ================================
+  // COLOR VALIDATION
+  // ================================
+
+  const invalidColor = imageGroups.some(
+    (group) => !group.color.trim()
+  );
+
+  if (invalidColor) {
+    setFormError(
+      'Please select a valid color for every color variant.'
+    );
+    return;
+  }
+
+  // ================================
+  // DUPLICATE COLORS
+  // ================================
+
+  const colors = imageGroups
+    .map((group) => group.color.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (new Set(colors).size !== colors.length) {
+    setFormError(
+      'You cannot use the same color more than once.'
+    );
+    return;
+  }
+
+  // ================================
+  // SUBMIT
+  // ================================
+
+  setIsSubmitting(true);
+
+  try {
+    const apiFormData = new FormData();
+
+    // Product fields
+    apiFormData.append(
+      'product_name',
+      formData.name || ''
+    );
+
+    apiFormData.append(
+      'category',
+      formData.category || ''
+    );
+
+    apiFormData.append(
+      'subcategory',
+      formData.subcategory || ''
+    );
+
+    apiFormData.append(
+      'sku',
+      formData.sku || ''
+    );
+
+    apiFormData.append(
+      'price',
+      String(formData.price ?? 0)
+    );
+
+    apiFormData.append(
+      'stock',
+      String(formData.stock ?? 0)
+    );
+
+    apiFormData.append(
+      'description',
+      formData.description || ''
+    );
+
+    apiFormData.append(
+      'status',
+      formData.status || 'active'
+    );
+
+    apiFormData.append(
+      'customizable',
+      String(formData.customizable ?? 0)
+    );
+
+    apiFormData.append(
+      'image_customizable',
+      String(formData.image_customizable ?? 0)
+    );
+
+    // ================================
+    // EDIT PRODUCT
+    // ================================
+
+    if (product?.id) {
+      apiFormData.append(
+        'product_id',
+        String(product.id)
+      );
+
+      apiFormData.append(
+        'delete_images',
+        JSON.stringify(deletedImages || [])
+      );
+
+      imageGroups.forEach((group, index) => {
+        const color = group.color.trim();
+
+        if (!color) return;
+
+        apiFormData.append(
+          `variants[${index}][color]`,
+          color
+        );
+
+        group.items.forEach((item) => {
+          if (
+            item.kind === 'new' &&
+            item.file
+          ) {
+            apiFormData.append(
+              `variants[${index}][images][]`,
+              item.file,
+              item.file.name
+            );
+          }
+
+          if (
+            item.kind === 'existing'
+          ) {
+            apiFormData.append(
+              `variants[${index}][existing_images][]`,
+              item.src.split('/').pop() || item.src
+            );
+          }
+        });
+      });
+
+      apiFormData.append(
+        'delete_similar',
+        JSON.stringify(
+          deletedSimilarImages || []
+        )
+      );
+
+      similarImages.forEach((item) => {
+        if (
+          item.kind === 'new' &&
+          item.file
+        ) {
+          apiFormData.append(
+            'similar[]',
+            item.file,
+            item.file.name
+          );
+        }
+
+        if (
+          item.kind === 'existing'
+        ) {
+          apiFormData.append(
+            'existing_similar[]',
+            item.src.split('/').pop() || item.src
+          );
+        }
+      });
+    }
+
+    // ================================
+    // ADD PRODUCT
+    // ================================
+
+    else {
+      imageGroups.forEach((group, index) => {
+        const color = group.color.trim();
+
+        if (!color) return;
+
+        apiFormData.append(
+          'colors[]',
+          color
+        );
+
+        group.items.forEach((item) => {
+          if (
+            item.kind === 'new' &&
+            item.file
+          ) {
+            apiFormData.append(
+              `images_${index}[]`,
+              item.file,
+              item.file.name
+            );
+          }
+        });
+      });
+
+      similarImages.forEach((item) => {
+        if (
+          item.kind === 'new' &&
+          item.file
+        ) {
+          apiFormData.append(
+            'similar[]',
+            item.file,
+            item.file.name
+          );
+        }
+      });
+    }
+
+    console.log(
+      '========== PRODUCT FORM DATA =========='
+    );
+
+    for (const [key, value] of apiFormData.entries()) {
+      console.log(key, value);
+    }
+
+    // IMPORTANT:
+    // Parent MUST throw an error when API fails.
+    await onSubmit(
+      formData,
+      apiFormData
+    );
+
+  } catch (error: any) {
+    console.error(
+      'Product submit error:',
+      error
+    );
 
     /*
-     * Clear previous error.
+     * THIS ERROR WILL APPEAR
+     * IN THE POPUP ABOVE THE FORM.
      */
-    setFormError('');
+    setFormError(
+      error?.message ||
+      'Something went wrong while submitting the product.'
+    );
 
-    /* =====================================================
-       BASIC VALIDATION
-    ===================================================== */
-
-    if (!formData.name?.trim()) {
-      setFormError(
-        'Please enter the product name.'
-      );
-      return;
-    }
-
-    if (!formData.category?.trim()) {
-      setFormError(
-        'Please select a product category.'
-      );
-      return;
-    }
-
-    if (
-      formData.price === undefined ||
-      formData.price === null ||
-      Number.isNaN(
-        Number(formData.price)
-      ) ||
-      Number(formData.price) < 0
-    ) {
-      setFormError(
-        'Please enter a valid product price.'
-      );
-      return;
-    }
-
-    if (
-      formData.stock === undefined ||
-      formData.stock === null ||
-      Number.isNaN(
-        Number(formData.stock)
-      ) ||
-      Number(formData.stock) < 0
-    ) {
-      setFormError(
-        'Please enter a valid stock quantity.'
-      );
-      return;
-    }
-
-    /* =====================================================
-       COLOR VALIDATION
-    ===================================================== */
-
-    const invalidColor =
-      imageGroups.some(
-        (group) =>
-          !group.color.trim()
-      );
-
-    if (invalidColor) {
-      setFormError(
-        'Please select a valid color for every color variant.'
-      );
-      return;
-    }
-
-    /* =====================================================
-       DUPLICATE COLOR VALIDATION
-    ===================================================== */
-
-    const colors = imageGroups
-      .map((group) =>
-        group.color
-          .trim()
-          .toLowerCase()
-      )
-      .filter(Boolean);
-
-    const hasDuplicateColors =
-      new Set(colors).size !==
-      colors.length;
-
-    if (hasDuplicateColors) {
-      setFormError(
-        'You cannot use the same color more than once.'
-      );
-      return;
-    }
-
-    /* =====================================================
-       START SUBMIT
-    ===================================================== */
-
-    setIsSubmitting(true);
-
-    try {
-      const apiFormData =
-        new FormData();
-
-      /* =================================================
-         PRODUCT DATA
-      ================================================= */
-
-      apiFormData.append(
-        'product_name',
-        formData.name || ''
-      );
-
-      apiFormData.append(
-        'category',
-        formData.category || ''
-      );
-
-      apiFormData.append(
-        'subcategory',
-        formData.subcategory || ''
-      );
-
-      apiFormData.append(
-        'sku',
-        formData.sku || ''
-      );
-
-      apiFormData.append(
-        'price',
-        String(
-          formData.price ?? 0
-        )
-      );
-
-      apiFormData.append(
-        'stock',
-        String(
-          formData.stock ?? 0
-        )
-      );
-
-      apiFormData.append(
-        'description',
-        formData.description || ''
-      );
-
-      apiFormData.append(
-        'status',
-        formData.status || 'active'
-      );
-
-      apiFormData.append(
-        'customizable',
-        String(
-          formData.customizable ?? 0
-        )
-      );
-
-      apiFormData.append(
-        'image_customizable',
-        String(
-          formData.image_customizable ?? 0
-        )
-      );
-
-      /* =================================================
-         EDIT PRODUCT
-      ================================================= */
-
-      if (product?.id) {
-        apiFormData.append(
-          'product_id',
-          String(product.id)
-        );
-
-        apiFormData.append(
-          'delete_images',
-          JSON.stringify(
-            deletedImages || []
-          )
-        );
-
-        imageGroups.forEach(
-          (group, index) => {
-            const color =
-              group.color.trim();
-
-            if (!color) {
-              return;
-            }
-
-            apiFormData.append(
-              `variants[${index}][color]`,
-              color
-            );
-
-            group.items.forEach(
-              (item) => {
-                if (
-                  item.kind === 'new' &&
-                  item.file
-                ) {
-                  apiFormData.append(
-                    `variants[${index}][images][]`,
-                    item.file,
-                    item.file.name
-                  );
-                }
-
-                if (
-                  item.kind ===
-                  'existing'
-                ) {
-                  apiFormData.append(
-                    `variants[${index}][existing_images][]`,
-                    item.src
-                      .split('/')
-                      .pop() ||
-                      item.src
-                  );
-                }
-              }
-            );
-          }
-        );
-
-        /* =================================================
-           SIMILAR IMAGES - EDIT
-        ================================================= */
-
-        apiFormData.append(
-          'delete_similar',
-          JSON.stringify(
-            deletedSimilarImages || []
-          )
-        );
-
-        similarImages.forEach(
-          (item) => {
-            if (
-              item.kind === 'new' &&
-              item.file
-            ) {
-              apiFormData.append(
-                'similar[]',
-                item.file,
-                item.file.name
-              );
-            }
-
-            if (
-              item.kind ===
-              'existing'
-            ) {
-              apiFormData.append(
-                'existing_similar[]',
-                item.src
-                  .split('/')
-                  .pop() ||
-                  item.src
-              );
-            }
-          }
-        );
-      }
-
-      /* =================================================
-         ADD PRODUCT
-      ================================================= */
-
-      else {
-        imageGroups.forEach(
-          (group, index) => {
-            const color =
-              group.color.trim();
-
-            if (!color) {
-              return;
-            }
-
-            apiFormData.append(
-              'colors[]',
-              color
-            );
-
-            group.items.forEach(
-              (item) => {
-                if (
-                  item.kind === 'new' &&
-                  item.file
-                ) {
-                  apiFormData.append(
-                    `images_${index}[]`,
-                    item.file,
-                    item.file.name
-                  );
-                }
-              }
-            );
-          }
-        );
-
-        /* =================================================
-           SIMILAR IMAGES
-        ================================================= */
-
-        similarImages.forEach(
-          (item) => {
-            if (
-              item.kind === 'new' &&
-              item.file
-            ) {
-              apiFormData.append(
-                'similar[]',
-                item.file,
-                item.file.name
-              );
-            }
-          }
-        );
-      }
-
-      /* =================================================
-         DEBUG
-      ================================================= */
-
-      console.log(
-        '========== PRODUCT FORM DATA =========='
-      );
-
-      for (
-        const [
-          key,
-          value,
-        ] of apiFormData.entries()
-      ) {
-        console.log(
-          key,
-          value
-        );
-      }
-
-      /* =================================================
-         IMPORTANT
-         
-         If API fails, parent MUST throw.
-         ProductForm catches it below.
-      ================================================= */
-
-      await onSubmit(
-        formData,
-        apiFormData
-      );
-
-      /*
-       * If we reach here, submission succeeded.
-       */
-      setFormError('');
-    } catch (error: any) {
-      console.error(
-        'Product submit error:',
-        error
-      );
-
-      /*
-       * THIS IS THE IMPORTANT PART.
-       *
-       * API errors now appear in the popup
-       * instead of disappearing.
-       */
-      let message =
-        'Something went wrong while submitting the product.';
-
-      if (
-        error instanceof Error &&
-        error.message
-      ) {
-        message = error.message;
-      } else if (
-        typeof error === 'string'
-      ) {
-        message = error;
-      } else if (
-        error?.message
-      ) {
-        message = String(
-          error.message
-        );
-      }
-
-      setFormError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   /* =======================================================
      INPUT CHANGE
   ======================================================= */
@@ -3682,91 +3568,70 @@ export function ProductForm({
      RENDER
   ======================================================= */
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm">
+return (
+  <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm">
 
-      {/* =================================================
-          ERROR POPUP
-      ================================================= */}
+    {/* ERROR POPUP */}
+    {formError && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
 
-      {formError && (
         <div
-          className="
-            fixed inset-0
-            z-[9999]
-            flex items-center justify-center
-            bg-black/60
-            p-4
-            backdrop-blur-sm
-          "
+          className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="
-              relative
-              w-full
-              max-w-md
-              overflow-hidden
-              rounded-2xl
-              bg-white
-              shadow-2xl
-              animate-in
-              fade-in
-              zoom-in-95
-              duration-200
-            "
-          >
-            {/* HEADER */}
+          {/* HEADER */}
+          <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
 
-            <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              </div>
-
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-red-700">
-                  Error
-                </h3>
-
-                <p className="text-xs text-red-500">
-                  Product could not be added
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFormError('')
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
 
-            {/* MESSAGE */}
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-red-700">
+                Error
+              </h3>
 
-            <div className="px-6 py-6">
-              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
-                {formError}
+              <p className="text-xs text-red-500">
+                Product could not be saved
               </p>
             </div>
 
-            {/* BUTTON */}
+            <button
+              type="button"
+              onClick={() => setFormError('')}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-            <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
-              <button
-                type="button"
-                onClick={() =>
-                  setFormError('')
-                }
-                className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-              >
-                OK
-              </button>
-            </div>
+          {/* MESSAGE */}
+          <div className="px-6 py-7">
+            <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+              {formError}
+            </p>
+          </div>
+
+          {/* BUTTON */}
+          <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
+            <button
+              type="button"
+              onClick={() => setFormError('')}
+              className="rounded-lg bg-red-600 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+            >
+              OK
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    )}
+
+    {/* MAIN FORM */}
+    <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      {/* ...your existing form... */}
+    </div>
+  </div>
+);
 
       {/* =================================================
           MAIN PRODUCT FORM
