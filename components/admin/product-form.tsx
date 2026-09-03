@@ -2246,7 +2246,6 @@
 
 
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -2278,15 +2277,7 @@ interface ProductFormProps {
   onClose: () => void;
 }
 
-/* =========================================================
-   CATEGORY OPTIONS
-========================================================= */
-
 const categories = ['Keychains'];
-
-/* =========================================================
-   COLOR API TYPE
-========================================================= */
 
 interface ApiColor {
   id: number;
@@ -2295,10 +2286,6 @@ interface ApiColor {
   created_at?: string;
   updated_at?: string;
 }
-
-/* =========================================================
-   IMAGE TYPES
-========================================================= */
 
 type ImageItem = {
   id: string;
@@ -2340,7 +2327,7 @@ function createImageItem(
 }
 
 /* =========================================================
-   DISPLAY URL
+   IMAGE URL
 ========================================================= */
 
 function toDisplayUrl(value: string) {
@@ -2370,12 +2357,8 @@ function toDisplayUrl(value: string) {
    IMAGE PREVIEW
 
    IMPORTANT:
-   Remote images are passed through the Next.js proxy.
-
-   This avoids:
-   - mixed-content errors on HTTPS website
-   - direct HTTP image blocking
-   - CORS problems
+   Remote HTTP/HTTPS images are sent through the
+   Next.js image proxy so they also work on HTTPS production.
 ========================================================= */
 
 function getPreviewSrc(value: string) {
@@ -2385,7 +2368,6 @@ function getPreviewSrc(value: string) {
     return '/placeholder.svg';
   }
 
-  /* Local browser preview */
   if (
     cleanValue.startsWith('blob:') ||
     cleanValue.startsWith('data:')
@@ -2393,18 +2375,26 @@ function getPreviewSrc(value: string) {
     return cleanValue;
   }
 
-  /* Already proxied */
   if (cleanValue.startsWith('/api/image-proxy')) {
-    return cleanValue;
-  }
-
-  /* Same-origin/local image */
-  if (cleanValue.startsWith('/')) {
     return cleanValue;
   }
 
   const displayUrl = toDisplayUrl(cleanValue);
 
+  if (!displayUrl) {
+    return '/placeholder.svg';
+  }
+
+  /*
+   * Local/same-origin images can be loaded directly.
+   */
+  if (displayUrl.startsWith('/')) {
+    return displayUrl;
+  }
+
+  /*
+   * Remote images use our proxy.
+   */
   return `/api/image-proxy?url=${encodeURIComponent(
     displayUrl
   )}`;
@@ -2487,13 +2477,9 @@ function buildInitialImageGroups(
    SYNC COLORS
 ========================================================= */
 
-function syncColorState(
-  groups: ImageGroup[]
-) {
+function syncColorState(groups: ImageGroup[]) {
   return groups
-    .map((group) =>
-      group.color.trim()
-    )
+    .map((group) => group.color.trim())
     .filter(Boolean);
 }
 
@@ -2510,11 +2496,10 @@ export function ProductForm({
      ERROR POPUP
   ======================================================= */
 
-  const [formError, setFormError] =
-    useState('');
+  const [formError, setFormError] = useState('');
 
   /* =======================================================
-     COLOR API STATE
+     COLOR API
   ======================================================= */
 
   const [colorOptions, setColorOptions] =
@@ -2527,85 +2512,69 @@ export function ProductForm({
      FORM DATA
   ======================================================= */
 
-  const [formData, setFormData] =
-    useState<Product>(
-      product
-        ? {
-            ...product,
+  const [formData, setFormData] = useState<Product>(
+    product
+      ? {
+          ...product,
 
-            name:
-              product.name || '',
+          name: product.name || '',
 
-            price:
-              Number(product.price) || 0,
+          price:
+            Number(product.price) || 0,
 
-            stock:
-              Number(product.stock) || 0,
+          stock:
+            Number(product.stock) || 0,
 
-            category:
-              product.category || '',
+          category:
+            product.category || '',
 
-            subcategory:
-              product.subcategory || '',
+          subcategory:
+            product.subcategory || '',
 
-            sku:
-              product.sku || '',
+          sku:
+            product.sku || '',
 
-            customizable:
-              product.customizable
-                ? 1
-                : 0,
+          customizable:
+            product.customizable ? 1 : 0,
 
-            image_customizable:
-              product.image_customizable
-                ? 1
-                : 0,
+          image_customizable:
+            product.image_customizable ? 1 : 0,
 
-            status:
-              product.status ||
-              'active',
+          status:
+            product.status || 'active',
 
-            color:
-              Array.isArray(
-                product.color
-              )
-                ? product.color
-                    .filter(
-                      (c: any) =>
-                        c &&
-                        String(c).trim()
-                    )
-                    .map((c: any) =>
-                      String(c).trim()
-                    )
-                : product.color &&
-                    String(
-                      product.color
-                    ).trim()
-                  ? [
-                      String(
-                        product.color
-                      ).trim(),
-                    ]
-                  : [],
-          }
-        : {
-            id: '',
-            name: '',
-            color: [],
-            category: '',
-            subcategory: '',
-            sku: `SKU-${Date.now()}`,
-            price: '',
-            stock: '',
-            description: '',
-            image: '',
-            customizable: 0,
-            image_customizable: 0,
-            status: 'active',
-            image_urls: [],
-          }
-    );
+          color: Array.isArray(product.color)
+            ? product.color
+                .filter(
+                  (c: any) =>
+                    c &&
+                    String(c).trim()
+                )
+                .map((c: any) =>
+                  String(c).trim()
+                )
+            : product.color &&
+                String(product.color).trim()
+              ? [String(product.color).trim()]
+              : [],
+        }
+      : {
+          id: '',
+          name: '',
+          color: [],
+          category: '',
+          subcategory: '',
+          sku: `SKU-${Date.now()}`,
+          price: '',
+          stock: '',
+          description: '',
+          image: '',
+          customizable: 0,
+          image_customizable: 0,
+          status: 'active',
+          image_urls: [],
+        }
+  );
 
   /* =======================================================
      COLOR IMAGE STATE
@@ -2639,7 +2608,7 @@ export function ProductForm({
     useState(false);
 
   /* =======================================================
-     LOAD COLOR OPTIONS
+     LOAD COLORS
   ======================================================= */
 
   useEffect(() => {
@@ -2661,8 +2630,7 @@ export function ProductForm({
           );
         }
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
         if (
           data.status &&
@@ -2671,13 +2639,10 @@ export function ProductForm({
           const activeColors =
             data.colors.filter(
               (color: ApiColor) =>
-                color.status ===
-                'active'
+                color.status === 'active'
             );
 
-          setColorOptions(
-            activeColors
-          );
+          setColorOptions(activeColors);
         } else {
           setColorOptions([]);
         }
@@ -2709,12 +2674,8 @@ export function ProductForm({
       return;
     }
 
-    /* COLOR VARIANTS */
-
     const groups =
-      buildInitialImageGroups(
-        product
-      );
+      buildInitialImageGroups(product);
 
     setImageGroups(groups);
 
@@ -2722,14 +2683,9 @@ export function ProductForm({
       ...prev,
 
       color: groups
-        .map(
-          (group) =>
-            group.color
-        )
+        .map((group) => group.color)
         .filter(Boolean),
     }));
-
-    /* SIMILAR IMAGES */
 
     const rawSimilar =
       (product as any).similar;
@@ -2749,14 +2705,12 @@ export function ProductForm({
             let src = '';
 
             if (
-              typeof item ===
-              'string'
+              typeof item === 'string'
             ) {
               src = item;
             } else if (
               item &&
-              typeof item ===
-                'object'
+              typeof item === 'object'
             ) {
               src =
                 item.image_url ||
@@ -2770,7 +2724,9 @@ export function ProductForm({
 
             return {
               id: `similar-existing-${index}-${src}`,
+
               kind: 'existing' as const,
+
               src: String(src),
             };
           }
@@ -2796,7 +2752,9 @@ export function ProductForm({
   ) => {
     e.preventDefault();
 
-    /* Clear previous error */
+    /*
+     * Clear previous error.
+     */
     setFormError('');
 
     /* =====================================================
@@ -2818,8 +2776,7 @@ export function ProductForm({
     }
 
     if (
-      formData.price ===
-        undefined ||
+      formData.price === undefined ||
       formData.price === null ||
       Number.isNaN(
         Number(formData.price)
@@ -2833,8 +2790,7 @@ export function ProductForm({
     }
 
     if (
-      formData.stock ===
-        undefined ||
+      formData.stock === undefined ||
       formData.stock === null ||
       Number.isNaN(
         Number(formData.stock)
@@ -2868,14 +2824,13 @@ export function ProductForm({
        DUPLICATE COLOR VALIDATION
     ===================================================== */
 
-    const colors =
-      imageGroups
-        .map((group) =>
-          group.color
-            .trim()
-            .toLowerCase()
-        )
-        .filter(Boolean);
+    const colors = imageGroups
+      .map((group) =>
+        group.color
+          .trim()
+          .toLowerCase()
+      )
+      .filter(Boolean);
 
     const hasDuplicateColors =
       new Set(colors).size !==
@@ -2889,11 +2844,10 @@ export function ProductForm({
     }
 
     /* =====================================================
-       SUBMIT
+       START SUBMIT
     ===================================================== */
 
     setIsSubmitting(true);
-    setFormError('');
 
     try {
       const apiFormData =
@@ -2957,8 +2911,7 @@ export function ProductForm({
       apiFormData.append(
         'image_customizable',
         String(
-          formData.image_customizable ??
-            0
+          formData.image_customizable ?? 0
         )
       );
 
@@ -2972,16 +2925,12 @@ export function ProductForm({
           String(product.id)
         );
 
-        /* DELETED COLOR IMAGES */
-
         apiFormData.append(
           'delete_images',
           JSON.stringify(
             deletedImages || []
           )
         );
-
-        /* COLOR VARIANTS */
 
         imageGroups.forEach(
           (group, index) => {
@@ -2999,11 +2948,8 @@ export function ProductForm({
 
             group.items.forEach(
               (item) => {
-                /* NEW IMAGE */
-
                 if (
-                  item.kind ===
-                    'new' &&
+                  item.kind === 'new' &&
                   item.file
                 ) {
                   apiFormData.append(
@@ -3013,21 +2959,16 @@ export function ProductForm({
                   );
                 }
 
-                /* EXISTING IMAGE */
-
                 if (
                   item.kind ===
                   'existing'
                 ) {
-                  const filename =
+                  apiFormData.append(
+                    `variants[${index}][existing_images][]`,
                     item.src
                       .split('/')
                       .pop() ||
-                    item.src;
-
-                  apiFormData.append(
-                    `variants[${index}][existing_images][]`,
-                    filename
+                      item.src
                   );
                 }
               }
@@ -3042,18 +2983,14 @@ export function ProductForm({
         apiFormData.append(
           'delete_similar',
           JSON.stringify(
-            deletedSimilarImages ||
-              []
+            deletedSimilarImages || []
           )
         );
 
         similarImages.forEach(
           (item) => {
-            /* NEW */
-
             if (
-              item.kind ===
-                'new' &&
+              item.kind === 'new' &&
               item.file
             ) {
               apiFormData.append(
@@ -3063,21 +3000,16 @@ export function ProductForm({
               );
             }
 
-            /* EXISTING */
-
             if (
               item.kind ===
               'existing'
             ) {
-              const filename =
+              apiFormData.append(
+                'existing_similar[]',
                 item.src
                   .split('/')
                   .pop() ||
-                item.src;
-
-              apiFormData.append(
-                'existing_similar[]',
-                filename
+                  item.src
               );
             }
           }
@@ -3089,8 +3021,6 @@ export function ProductForm({
       ================================================= */
 
       else {
-        /* COLOR VARIANTS */
-
         imageGroups.forEach(
           (group, index) => {
             const color =
@@ -3108,8 +3038,7 @@ export function ProductForm({
             group.items.forEach(
               (item) => {
                 if (
-                  item.kind ===
-                    'new' &&
+                  item.kind === 'new' &&
                   item.file
                 ) {
                   apiFormData.append(
@@ -3123,13 +3052,14 @@ export function ProductForm({
           }
         );
 
-        /* SIMILAR IMAGES */
+        /* =================================================
+           SIMILAR IMAGES
+        ================================================= */
 
         similarImages.forEach(
           (item) => {
             if (
-              item.kind ===
-                'new' &&
+              item.kind === 'new' &&
               item.file
             ) {
               apiFormData.append(
@@ -3150,10 +3080,12 @@ export function ProductForm({
         '========== PRODUCT FORM DATA =========='
       );
 
-      for (const [
-        key,
-        value,
-      ] of apiFormData.entries()) {
+      for (
+        const [
+          key,
+          value,
+        ] of apiFormData.entries()
+      ) {
         console.log(
           key,
           value
@@ -3162,10 +3094,9 @@ export function ProductForm({
 
       /* =================================================
          IMPORTANT
-
-         Parent onSubmit MUST THROW API ERROR.
-
-         If API fails, this catch displays popup.
+         
+         If API fails, parent MUST throw.
+         ProductForm catches it below.
       ================================================= */
 
       await onSubmit(
@@ -3174,17 +3105,21 @@ export function ProductForm({
       );
 
       /*
-       * Do NOT close the form here.
-       *
-       * The parent decides when the operation
-       * was successful and can close the form.
+       * If we reach here, submission succeeded.
        */
+      setFormError('');
     } catch (error: any) {
       console.error(
         'Product submit error:',
         error
       );
 
+      /*
+       * THIS IS THE IMPORTANT PART.
+       *
+       * API errors now appear in the popup
+       * instead of disappearing.
+       */
       let message =
         'Something went wrong while submitting the product.';
 
@@ -3194,9 +3129,7 @@ export function ProductForm({
       ) {
         message = error.message;
       } else if (
-        typeof error ===
-          'string' &&
-        error.trim()
+        typeof error === 'string'
       ) {
         message = error;
       } else if (
@@ -3294,20 +3227,18 @@ export function ProductForm({
     value: string
   ) => {
     setImageGroups((prev) => {
-      const next =
-        prev.map(
-          (
-            group,
-            index
-          ) =>
-            index ===
-            groupIndex
-              ? {
-                  ...group,
-                  color: value,
-                }
-              : group
-        );
+      const next = prev.map(
+        (
+          group,
+          index
+        ) =>
+          index === groupIndex
+            ? {
+                ...group,
+                color: value,
+              }
+            : group
+      );
 
       setFormData(
         (current) => ({
@@ -3362,78 +3293,74 @@ export function ProductForm({
      REMOVE COLOR GROUP
   ======================================================= */
 
-  const handleRemoveColorGroup = (
-    groupIndex: number
-  ) => {
-    setImageGroups((prev) => {
-      const removed =
-        prev[groupIndex];
+  const handleRemoveColorGroup =
+    (groupIndex: number) => {
+      setImageGroups((prev) => {
+        const removed =
+          prev[groupIndex];
 
-      if (removed) {
-        removed.items.forEach(
-          (item) => {
-            if (
-              item.kind ===
-              'existing'
-            ) {
-              const filename =
-                item.src
-                  .split('/')
-                  .pop() ||
-                item.src;
+        if (removed) {
+          removed.items.forEach(
+            (item) => {
+              if (
+                item.kind ===
+                'existing'
+              ) {
+                const filename =
+                  item.src
+                    .split('/')
+                    .pop() ||
+                  item.src;
 
-              setDeletedImages(
-                (current) =>
-                  current.includes(
-                    filename
-                  )
-                    ? current
-                    : [
-                        ...current,
-                        filename,
-                      ]
-              );
+                setDeletedImages(
+                  (current) =>
+                    current.includes(
+                      filename
+                    )
+                      ? current
+                      : [
+                          ...current,
+                          filename,
+                        ]
+                );
+              }
+
+              if (
+                item.kind ===
+                  'new' &&
+                item.src.startsWith(
+                  'blob:'
+                )
+              ) {
+                URL.revokeObjectURL(
+                  item.src
+                );
+              }
             }
+          );
+        }
 
-            if (
-              item.kind ===
-                'new' &&
-              item.src.startsWith(
-                'blob:'
-              )
-            ) {
-              URL.revokeObjectURL(
-                item.src
-              );
-            }
-          }
-        );
-      }
+        const next =
+          prev.filter(
+            (_, index) =>
+              index !==
+              groupIndex
+          );
 
-      const next =
-        prev.filter(
-          (
-            _,
-            index
-          ) =>
-            index !==
-            groupIndex
+        setFormData(
+          (current) => ({
+            ...current,
+
+            color:
+              syncColorState(
+                next
+              ),
+          })
         );
 
-      setFormData(
-        (current) => ({
-          ...current,
-
-          color:
-            syncColorState(
-              next
-            ),
-        })
-      );
-
-      return next;
-    });
-  };
+        return next;
+      });
+    };
 
   /* =======================================================
      COLOR IMAGE UPLOAD
@@ -3489,8 +3416,6 @@ export function ProductForm({
       e.target.value = '';
       return;
     }
-
-    setFormError('');
 
     setImageGroups(
       (prev) =>
@@ -3666,8 +3591,6 @@ export function ProductForm({
         return;
       }
 
-      setFormError('');
-
       setSimilarImages(
         (prev) => [
           ...prev,
@@ -3708,8 +3631,6 @@ export function ProductForm({
             return prev;
           }
 
-          /* EXISTING */
-
           if (
             removed.kind ===
             'existing'
@@ -3732,8 +3653,6 @@ export function ProductForm({
                     ]
             );
           }
-
-          /* NEW */
 
           if (
             removed.kind ===
@@ -3772,23 +3691,31 @@ export function ProductForm({
 
       {formError && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={(e) => {
-            if (
-              e.target ===
-              e.currentTarget
-            ) {
-              setFormError('');
-            }
-          }}
+          className="
+            fixed inset-0
+            z-[9999]
+            flex items-center justify-center
+            bg-black/60
+            p-4
+            backdrop-blur-sm
+          "
         >
           <div
-            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
+            className="
+              relative
+              w-full
+              max-w-md
+              overflow-hidden
+              rounded-2xl
+              bg-white
+              shadow-2xl
+              animate-in
+              fade-in
+              zoom-in-95
+              duration-200
+            "
           >
-            {/* ERROR HEADER */}
+            {/* HEADER */}
 
             <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
@@ -3801,7 +3728,7 @@ export function ProductForm({
                 </h3>
 
                 <p className="text-xs text-red-500">
-                  Product could not be saved
+                  Product could not be added
                 </p>
               </div>
 
@@ -3816,7 +3743,7 @@ export function ProductForm({
               </button>
             </div>
 
-            {/* ERROR MESSAGE */}
+            {/* MESSAGE */}
 
             <div className="px-6 py-6">
               <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
@@ -3824,7 +3751,7 @@ export function ProductForm({
               </p>
             </div>
 
-            {/* ERROR BUTTON */}
+            {/* BUTTON */}
 
             <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
               <button
@@ -3832,7 +3759,7 @@ export function ProductForm({
                 onClick={() =>
                   setFormError('')
                 }
-                className="rounded-lg bg-red-600 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
               >
                 OK
               </button>
@@ -3917,8 +3844,6 @@ export function ProductForm({
                     key={group.id}
                     className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                   >
-                    {/* COLOR HEADER */}
-
                     <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                       <div className="flex-1">
                         <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -3973,8 +3898,6 @@ export function ProductForm({
                           )}
                       </div>
 
-                      {/* COLOR BUTTONS */}
-
                       <div className="flex items-center gap-2">
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
                           <Upload className="h-4 w-4" />
@@ -4012,8 +3935,6 @@ export function ProductForm({
                       </div>
                     </div>
 
-                    {/* COLOR IMAGES */}
-
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                       {group.items.length >
                       0 ? (
@@ -4044,8 +3965,6 @@ export function ProductForm({
                                 />
                               </div>
 
-                              {/* PRIMARY */}
-
                               {itemIndex ===
                                 0 && (
                                 <div className="absolute -left-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-yellow-400 shadow">
@@ -4064,6 +3983,7 @@ export function ProductForm({
                                 className="mt-2 flex w-full items-center justify-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-100"
                               >
                                 <Trash2 className="h-4 w-4" />
+
                                 Remove
                               </button>
                             </div>
@@ -4079,8 +3999,6 @@ export function ProductForm({
                 )
               )}
             </div>
-
-            {/* ADD COLOR */}
 
             <div className="mt-4 flex justify-start">
               <button
@@ -4174,6 +4092,7 @@ export function ProductForm({
                         className="mt-2 flex w-full items-center justify-center gap-1 rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100"
                       >
                         <Trash2 className="h-4 w-4" />
+
                         Remove
                       </button>
                     </div>
@@ -4256,7 +4175,9 @@ export function ProductForm({
                       category
                     }
                   >
-                    {category}
+                    {
+                      category
+                    }
                   </option>
                 )
               )}
@@ -4312,8 +4233,7 @@ export function ProductForm({
                     (prev) => ({
                       ...prev,
                       price:
-                        e.target
-                          .value,
+                        e.target.value,
                     })
                   );
                 }}
@@ -4341,8 +4261,7 @@ export function ProductForm({
                     (prev) => ({
                       ...prev,
                       stock:
-                        e.target
-                          .value,
+                        e.target.value,
                     })
                   );
                 }}
