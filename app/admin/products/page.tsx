@@ -14,11 +14,21 @@ type ProductImageGroup = {
 };
 
 function getPreviewSrc(url: string) {
-  if (url.startsWith('blob:') || url.startsWith('data:')) {
+  if (!url) {
+    return "/placeholder.svg";
+  }
+
+  if (
+    url.startsWith("blob:") ||
+    url.startsWith("data:") ||
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("/")
+  ) {
     return url;
   }
 
-  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  return `http://nextlayer.soon.it/images/${url.replace(/^\/+/, "")}`;
 }
 
 function ProductImageCell({
@@ -26,23 +36,32 @@ function ProductImageCell({
   onOpenLightbox,
 }: {
   product: any;
-  onOpenLightbox: (imageUrls: string[], index?: number) => void;
+  onOpenLightbox: (
+    imageUrls: string[],
+    index?: number
+  ) => void;
 }) {
-  const imageGroups = normalizeProductImageGroups({
-    ...product,
-    variants: product.variants || product.images || [],
-  });
-  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+  const imageGroups =
+    normalizeProductImageGroups(product);
+
+  const [activeGroupIndex, setActiveGroupIndex] =
+    useState(0);
 
   const safeActiveGroupIndex = Math.min(
     activeGroupIndex,
     Math.max(imageGroups.length - 1, 0)
   );
 
-  const activeGroup = imageGroups[safeActiveGroupIndex] || imageGroups[0];
+  const activeGroup =
+    imageGroups[safeActiveGroupIndex] ||
+    imageGroups[0];
+
   const activeImages = activeGroup?.images || [];
-  const activeImage = activeImages[0] || '';
-  const extraCount = Math.max(activeImages.length - 4, 0);
+
+  const extraCount = Math.max(
+    activeImages.length - 4,
+    0
+  );
 
   useEffect(() => {
     setActiveGroupIndex(0);
@@ -55,16 +74,24 @@ function ProductImageCell({
       </div>
     );
   }
+
   const previewImage =
-    activeImages?.length > 0
+    activeImages.length > 0
       ? getPreviewSrc(activeImages[0])
       : "/placeholder.svg";
 
   return (
     <div className="w-full max-w-60 rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+      {/* Main Image */}
       <button
         type="button"
-        onClick={() => onOpenLightbox(activeImages, 0)}
+        onClick={() =>
+          onOpenLightbox(
+            activeImages.map(getPreviewSrc),
+            0
+          )
+        }
         className="block w-full p-2 text-left"
       >
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
@@ -74,44 +101,66 @@ function ProductImageCell({
               alt={`${activeGroup?.color || "Product"}-primary`}
               className="h-full w-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = "/placeholder.svg";
+                e.currentTarget.src =
+                  "/placeholder.svg";
               }}
             />
           </div>
         </div>
       </button>
 
+      {/* Thumbnails */}
       <div className="px-2 pb-2">
         <div className="grid grid-cols-3 gap-2">
-          {activeImages.slice(1, 5).map((imageUrl, index) => (
-            <button
-              key={`${imageUrl}-${index}`}
-              type="button"
-              onClick={() => onOpenLightbox(activeImages, index + 1)}
-              className="overflow-hidden rounded-md border border-slate-200 bg-slate-100"
-            >
-              <div className="aspect-square w-full">
-                <img
-                  src={getPreviewSrc(imageUrl)}
-                  alt={`${activeGroup?.color || 'Product'}-${index + 2}`}
-                  className="h-full w-full object-cover"
-                  onError={(event) => {
-                    (event.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-              </div>
-            </button>
-          ))}
+
+          {activeImages
+            .slice(1, 5)
+            .map((imageUrl, index) => (
+              <button
+                key={`${imageUrl}-${index}`}
+                type="button"
+                onClick={() =>
+                  onOpenLightbox(
+                    activeImages.map(getPreviewSrc),
+                    index + 1
+                  )
+                }
+                className="overflow-hidden rounded-md border border-slate-200 bg-slate-100"
+              >
+                <div className="aspect-square w-full">
+                  <img
+                    src={getPreviewSrc(imageUrl)}
+                    alt={`${
+                      activeGroup?.color ||
+                      "Product"
+                    }-${index + 2}`}
+                    className="h-full w-full object-cover"
+                    onError={(event) => {
+                      (
+                        event.target as HTMLImageElement
+                      ).src =
+                        "/placeholder.svg";
+                    }}
+                  />
+                </div>
+              </button>
+            ))}
 
           {extraCount > 0 && (
             <button
               type="button"
-              onClick={() => onOpenLightbox(activeImages, 0)}
+              onClick={() =>
+                onOpenLightbox(
+                  activeImages.map(getPreviewSrc),
+                  0
+                )
+              }
               className="flex aspect-square items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs font-semibold text-slate-500"
             >
               +{extraCount}
             </button>
           )}
+
         </div>
       </div>
     </div>
@@ -121,42 +170,70 @@ function ProductImageCell({
 function normalizeProductImageGroups(product: any): ProductImageGroup[] {
   const groups: ProductImageGroup[] = [];
 
-  // Support API response: variants
+  // ==========================================
+  // 1. COLOR VARIANTS
+  // ==========================================
   if (Array.isArray(product?.variants)) {
     product.variants.forEach((variant: any, index: number) => {
       const images =
-        variant.image_urls?.length > 0
+        Array.isArray(variant?.image_urls) &&
+        variant.image_urls.length > 0
           ? variant.image_urls
-          : variant.images || [];
+          : Array.isArray(variant?.images)
+            ? variant.images.map((img: string) =>
+                getPreviewSrc(img)
+              )
+            : [];
 
-      if (images.length > 0) {
+      const validImages = images
+        .filter(Boolean)
+        .map((img: string) => getPreviewSrc(img));
+
+      if (validImages.length > 0) {
         groups.push({
           color: variant.color || `Color ${index + 1}`,
-          images,
+          images: validImages,
         });
       }
     });
   }
 
-  // Support old response: images
-  if (groups.length === 0 && Array.isArray(product?.images)) {
+  // ==========================================
+  // 2. OLD IMAGE STRUCTURE
+  // ==========================================
+  if (
+    groups.length === 0 &&
+    Array.isArray(product?.images)
+  ) {
     product.images.forEach((group: any, index: number) => {
-      const images = group.image_urls?.length
-        ? group.image_urls
-        : group.images || [];
+      const images =
+        Array.isArray(group?.image_urls) &&
+        group.image_urls.length > 0
+          ? group.image_urls
+          : Array.isArray(group?.images)
+            ? group.images
+            : [];
 
-      if (images.length > 0) {
+      const validImages = images
+        .filter(Boolean)
+        .map((img: string) => getPreviewSrc(img));
+
+      if (validImages.length > 0) {
         groups.push({
           color: group.color || `Color ${index + 1}`,
-          images,
+          images: validImages,
         });
       }
     });
   }
 
-  // Fallback
+  // ==========================================
+  // 3. NORMAL PRODUCT IMAGES
+  // ==========================================
   if (groups.length === 0) {
-    const fallbackImages = normalizeProductImageUrls(product);
+    const fallbackImages = normalizeProductImageUrls(product)
+      .filter(Boolean)
+      .map((img: string) => getPreviewSrc(img));
 
     if (fallbackImages.length > 0) {
       groups.push({
@@ -166,9 +243,37 @@ function normalizeProductImageGroups(product: any): ProductImageGroup[] {
     }
   }
 
+  // ==========================================
+  // 4. SIMILAR IMAGES
+  // ==========================================
+  if (
+    groups.length === 0 &&
+    Array.isArray(product?.similar)
+  ) {
+    const similarImages = product.similar
+      .map((item: any) => {
+        if (typeof item === "string") {
+          return getPreviewSrc(item);
+        }
+
+        return getPreviewSrc(
+          item?.image_url ||
+          item?.image ||
+          ""
+        );
+      })
+      .filter(Boolean);
+
+    if (similarImages.length > 0) {
+      groups.push({
+        color: "Similar",
+        images: similarImages,
+      });
+    }
+  }
+
   return groups;
 }
-
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -206,36 +311,60 @@ export default function ProductsPage() {
             fullImageUrls
           );
 
-          return {
-            id: product.id || '',
-            name: product.product_name || '',
-            price: parseFloat(product.price) || 0,
-            stock: parseInt(product.stock) || 0,
-            category: product.category || '',
-            description: product.description || '',
-            // keep legacy comma-string for table cell rendering
-            image: fullImageUrls.join(','),
-            // include array form so edit forms can read product.image_urls
-            image_urls: fullImageUrls,
-            variants: product.variants || [],
+return {
+  id: product.id || '',
+  name: product.product_name || '',
+  price: parseFloat(product.price) || 0,
+  stock: parseInt(product.stock) || 0,
+  category: product.category || '',
+  description: product.description || '',
 
-            images:
-              product.variants?.map((v: any) => ({
-                color: v.color,
-                image_urls: v.image_urls || [],
-              })) || [],
-            customizable: product.customizable !== undefined ? Number(product.customizable) : 0,
-            image_customizable: product.image_customizable !== undefined ? Number(product.image_customizable) : 0,
-            subcategory: product.subcategory || '',
-            sku: product.sku || '',
-            color: Array.isArray(product.variants)
-              ? product.variants
-                .map((v: any) => v.color)
-                .filter(Boolean)
-              : [],
-            status: product.status || 'active',
-            created_at: product.created_at || '',
-          };
+  // Main/variant images
+  image: fullImageUrls.join(','),
+  image_urls: fullImageUrls,
+
+  // Color variants
+  variants: Array.isArray(product.variants)
+    ? product.variants
+    : [],
+
+  // Legacy images
+  images: Array.isArray(product.variants)
+    ? product.variants.map((v: any) => ({
+        color: v.color || '',
+        image_urls: Array.isArray(v.image_urls)
+          ? v.image_urls
+          : [],
+      }))
+    : [],
+
+  // IMPORTANT: Similar images
+  similar: Array.isArray(product.similar)
+    ? product.similar
+    : [],
+
+  customizable:
+    product.customizable !== undefined
+      ? Number(product.customizable)
+      : 0,
+
+  image_customizable:
+    product.image_customizable !== undefined
+      ? Number(product.image_customizable)
+      : 0,
+
+  subcategory: product.subcategory || '',
+  sku: product.sku || '',
+
+  color: Array.isArray(product.variants)
+    ? product.variants
+        .map((v: any) => v.color)
+        .filter(Boolean)
+    : [],
+
+  status: product.status || 'active',
+  created_at: product.created_at || '',
+};
         });
 
         console.log('Mapped Products:', mappedProducts);
@@ -255,8 +384,7 @@ export default function ProductsPage() {
 
   const handleAddProduct = async (product: Product, formData?: FormData) => {
     try {
-const requestData =
-    formData ?? createFormData(product); 
+      const requestData = formData ?? createFormData(product);
       console.log('Adding product:', product);
 
       const response = await fetch('/api/products', {
@@ -268,7 +396,6 @@ const requestData =
       console.log('Add response:', data);
 
       if (data.status) {
-        // Refresh products list to get the new product with correct ID from API
         await fetchProducts();
         setShowForm(false);
         setError(null);
@@ -281,93 +408,93 @@ const requestData =
     }
   };
 
-const handleUpdateProduct = async (
-  product: Product,
-  formData?: FormData
-) => {
-  try {
-    const requestData = formData ?? createFormData(product);
+  const handleUpdateProduct = async (
+    product: Product,
+    formData?: FormData
+  ) => {
+    try {
+      const requestData = formData ?? createFormData(product);
 
-    // Make sure required fields are always present
-    if (!requestData.has('product_id')) {
-      requestData.append('product_id', String(product.id));
+      // Make sure required fields are always present
+      if (!requestData.has('product_id')) {
+        requestData.append('product_id', String(product.id));
+      }
+
+      if (!requestData.has('product_name')) {
+        requestData.append('product_name', product.name || '');
+      }
+
+      if (!requestData.has('category')) {
+        requestData.append('category', product.category || '');
+      }
+
+      if (!requestData.has('subcategory')) {
+        requestData.append('subcategory', product.subcategory || '');
+      }
+
+      if (!requestData.has('sku')) {
+        requestData.append('sku', product.sku || '');
+      }
+
+      if (!requestData.has('price')) {
+        requestData.append('price', String(product.price ?? ''));
+      }
+
+      if (!requestData.has('stock')) {
+        requestData.append('stock', String(product.stock ?? ''));
+      }
+
+      if (!requestData.has('description')) {
+        requestData.append('description', product.description || '');
+      }
+
+      if (!requestData.has('status')) {
+        requestData.append('status', product.status || 'active');
+      }
+
+      if (!requestData.has('customizable')) {
+        requestData.append(
+          'customizable',
+          String(product.customizable ?? 0)
+        );
+      }
+
+      if (!requestData.has('image_customizable')) {
+        requestData.append(
+          'image_customizable',
+          String(product.image_customizable ?? 0)
+        );
+      }
+
+      // Debug FormData
+      console.log('UPDATE PRODUCT DATA:');
+
+      for (const [key, value] of requestData.entries()) {
+        console.log(key, value);
+      }
+
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: 'PUT',
+        body: requestData,
+      });
+
+      const data = await response.json();
+
+      console.log('Update response:', data);
+
+      if (data.status) {
+        await fetchProducts();
+        setEditingProduct(undefined);
+        setShowForm(false);
+        setError(null);
+      } else {
+        setError(data.message || 'Failed to update product');
+      }
+    } catch (err) {
+      setError('Error updating product');
+      console.error(err);
     }
-
-    if (!requestData.has('product_name')) {
-      requestData.append('product_name', product.name || '');
-    }
-
-    if (!requestData.has('category')) {
-      requestData.append('category', product.category || '');
-    }
-
-    if (!requestData.has('subcategory')) {
-      requestData.append('subcategory', product.subcategory || '');
-    }
-
-    if (!requestData.has('sku')) {
-      requestData.append('sku', product.sku || '');
-    }
-
-    if (!requestData.has('price')) {
-      requestData.append('price', String(product.price ?? ''));
-    }
-
-    if (!requestData.has('stock')) {
-      requestData.append('stock', String(product.stock ?? ''));
-    }
-
-    if (!requestData.has('description')) {
-      requestData.append('description', product.description || '');
-    }
-
-    if (!requestData.has('status')) {
-      requestData.append('status', product.status || 'active');
-    }
-
-    if (!requestData.has('customizable')) {
-      requestData.append(
-        'customizable',
-        String(product.customizable ?? 0)
-      );
-    }
-
-    if (!requestData.has('image_customizable')) {
-      requestData.append(
-        'image_customizable',
-        String(product.image_customizable ?? 0)
-      );
-    }
-
-    // Debug FormData
-    console.log('UPDATE PRODUCT DATA:');
-
-    for (const [key, value] of requestData.entries()) {
-      console.log(key, value);
-    }
-
-    const response = await fetch(`/api/products/${product.id}`, {
-      method: 'PUT',
-      body: requestData,
-    });
-
-    const data = await response.json();
-
-    console.log('Update response:', data);
-
-    if (data.status) {
-      await fetchProducts();
-      setEditingProduct(undefined);
-      setShowForm(false);
-      setError(null);
-    } else {
-      setError(data.message || 'Failed to update product');
-    }
-  } catch (err) {
-    setError('Error updating product');
-    console.error(err);
-  }
-};
+  };
 
   const handleDeleteProduct = async () => {
     if (deleteId) {
@@ -395,98 +522,55 @@ const handleUpdateProduct = async (
     }
   };
 
-  const handleSubmitForm = (product: Product, formData?: FormData) => {
+  const handleSubmitForm = async (product: Product, formData?: FormData) => {
     if (editingProduct) {
-      handleUpdateProduct(product, formData);
+      await handleUpdateProduct(product, formData);
     } else {
-      handleAddProduct(product, formData);
+      await handleAddProduct(product, formData);
     }
   };
 
-const createFormData = (product:any)=>{
+  const createFormData = (product: any) => {
 
-    const fd=new FormData();
+    const fd = new FormData();
 
-    fd.append("product_name",product.name);
-    fd.append("category",product.category);
-    fd.append("subcategory",product.subcategory);
-    fd.append("sku",product.sku);
-    fd.append("price",String(product.price));
-    fd.append("stock",String(product.stock));
-    fd.append("description",product.description);
-    fd.append("status",product.status);
-    fd.append("customizable",String(product.customizable));
-    fd.append("image_customizable",String(product.image_customizable));
+    fd.append("product_name", product.name);
+    fd.append("category", product.category);
+    fd.append("subcategory", product.subcategory);
+    fd.append("sku", product.sku);
+    fd.append("price", String(product.price));
+    fd.append("stock", String(product.stock));
+    fd.append("description", product.description);
+    fd.append("status", product.status);
+    fd.append("customizable", String(product.customizable));
+    fd.append("image_customizable", String(product.image_customizable));
 
-    if(product.id){
-        fd.append("product_id",String(product.id));
+    if (product.id) {
+      fd.append("product_id", String(product.id));
     }
 
-    product.variants?.forEach((variant:any,index:number)=>{
+    product.variants?.forEach((variant: any, index: number) => {
+
+      fd.append(
+        `variants[${index}][color]`,
+        variant.color
+      );
+
+      variant.files?.forEach((file: File) => {
 
         fd.append(
-            `variants[${index}][color]`,
-            variant.color
+          `variants[${index}][images][]`,
+          file
         );
 
-        variant.files?.forEach((file:File)=>{
-
-            fd.append(
-                `variants[${index}][images][]`,
-                file
-            );
-
-        });
+      });
 
     });
 
     return fd;
-}
+  }
 
-//   const createFormData = (product: any): FormData => {
-//     const formData = new FormData();
-
-//     formData.append("product_id", product.id);
-//     formData.append("product_name", product.name);
-//     formData.append("category", product.category);
-//     formData.append("subcategory", product.subcategory);
-//     formData.append("sku", product.sku);
-//     formData.append("price", String(product.price));
-//     formData.append("stock", String(product.stock));
-//     formData.append("description", product.description);
-//     formData.append("status", product.status);
-
-//     // Variants
-//     product.variants?.forEach((variant: any, index: number) => {
-//       formData.append(`variants[${index}][color]`, variant.color);
-
-//       // New uploaded files
-//   variant.items?.forEach((item:any)=>{
-
-//     if(item.kind==="new" && item.file){
-
-//         formData.append(
-//             `variants[${index}][images][]`,
-//             item.file,
-//             item.file.name
-//         );
-
-//     }
-
-//     if(item.kind==="existing"){
-
-//         formData.append(
-//             `variants[${index}][existing_images][]`,
-//             item.src.split('/').pop() || item.src
-//         );
-
-//     }
-
-// });
-//     });
-
-//     return formData;
-//   };
+  
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -644,37 +728,37 @@ const createFormData = (product:any)=>{
                   label: 'Product Name',
                   className: 'max-w-xs',
                 },
-              {
-  key: 'category',
-  label: 'Category',
-  render: (value) => {
-    // Handle string/number
-    if (typeof value === 'string' || typeof value === 'number') {
-      const text = String(value).trim();
+                {
+                  key: 'category',
+                  label: 'Category',
+                  render: (value) => {
+                    // Handle string/number
+                    if (typeof value === 'string' || typeof value === 'number') {
+                      const text = String(value).trim();
 
-      return text ? (
-        text
-      ) : (
-        <span className="text-slate-500">N/A</span>
-      );
-    }
+                      return text ? (
+                        text
+                      ) : (
+                        <span className="text-slate-500">N/A</span>
+                      );
+                    }
 
-    // Handle object like { name: "Keychains" }
-    if (value && typeof value === 'object') {
-      const category = value as { name?: string; category?: string };
+                    // Handle object like { name: "Keychains" }
+                    if (value && typeof value === 'object') {
+                      const category = value as { name?: string; category?: string };
 
-      const text = category.name || category.category || '';
+                      const text = category.name || category.category || '';
 
-      return text ? (
-        text
-      ) : (
-        <span className="text-slate-500">N/A</span>
-      );
-    }
+                      return text ? (
+                        text
+                      ) : (
+                        <span className="text-slate-500">N/A</span>
+                      );
+                    }
 
-    return <span className="text-slate-500">N/A</span>;
-  },
-},
+                    return <span className="text-slate-500">N/A</span>;
+                  },
+                },
                 {
                   key: 'price',
                   label: 'Price',
@@ -772,15 +856,15 @@ const createFormData = (product:any)=>{
 
             {/* Image Container */}
             <div className="relative w-full bg-black rounded-lg overflow-hidden">
-              <img
-                src={lightboxImages[lightboxIndex]}
-                alt={`Product image ${lightboxIndex + 1}`}
-                className="w-full h-auto max-h-[80vh] object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    'https://placehold.co/800x600?text=Image+Not+Found';
-                }}
-              />
+            <img
+  src={getPreviewSrc(lightboxImages[lightboxIndex])}
+  alt={`Product image ${lightboxIndex + 1}`}
+  className="w-full h-auto max-h-[80vh] object-contain"
+  onError={(e) => {
+    (e.target as HTMLImageElement).src =
+      "/placeholder.svg";
+  }}
+/>
             </div>
 
             {/* Navigation Controls */}

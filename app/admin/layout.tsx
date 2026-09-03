@@ -30,6 +30,11 @@ const navItems = [
     name: 'Filament',
     href: '/admin/filament',
     icon: Settings,
+  },
+  {
+    name: 'Colors',
+    href: '/admin/color',
+    icon: Settings,
   }
 ];
 
@@ -92,20 +97,20 @@ export default function AdminLayout({
 
           {/* Bottom Actions */}
           <div className="border-t border-slate-200 px-3 py-4 space-y-2">
-            <button
+            {/* <button
               title="Settings"
               className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
             >
               <Settings className="h-5 w-5 flex-shrink-0" />
               {sidebarOpen && <span>Settings</span>}
-            </button>
-            <button
+            </button> */}
+            {/* <button
               title="Logout"
               className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <LogOut className="h-5 w-5 flex-shrink-0" />
               {sidebarOpen && <span>Logout</span>}
-            </button>
+            </button> */}
           </div>
 
           {/* Footer */}
@@ -133,11 +138,11 @@ export default function AdminLayout({
                 (item.href !== '/admin' && pathname.startsWith(item.href)))?.name || 'Dashboard'}
             </h2>
           </div>
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold cursor-pointer hover:shadow-lg transition-shadow">
               A
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Page Content */}

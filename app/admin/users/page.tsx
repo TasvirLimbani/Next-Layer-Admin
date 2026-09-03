@@ -137,7 +137,7 @@ export default function UsersPage() {
       )}
 
       {/* SUMMARY */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* TOTAL */}
         <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-600">
@@ -168,20 +168,7 @@ export default function UsersPage() {
           </p>
         </div>
 
-        {/* GROWTH */}
-        <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-600">
-            Growth Rate
-          </p>
-
-          <p className="mt-2 text-3xl font-bold text-green-600">
-            ↑ 8.3%
-          </p>
-
-          <p className="mt-4 text-xs text-slate-500">
-            vs last month
-          </p>
-        </div>
+     
       </div>
 
       {/* USERS TABLE */}
