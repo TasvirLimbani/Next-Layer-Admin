@@ -2409,10 +2409,10 @@ function buildInitialImageGroups(
 ): ImageGroup[] {
   const productColors = Array.isArray(product?.color)
     ? product.color
-        .map((item) => String(item).trim())
-        .filter(Boolean)
+      .map((item) => String(item).trim())
+      .filter(Boolean)
     : product?.color &&
-        String(product.color).trim()
+      String(product.color).trim()
       ? [String(product.color).trim()]
       : [];
 
@@ -2431,8 +2431,8 @@ function buildInitialImageGroups(
     .map((group: any, index: number) => {
       const color = String(
         group?.color ||
-          productColors[index] ||
-          ''
+        productColors[index] ||
+        ''
       ).trim();
 
       const imageValues =
@@ -2515,65 +2515,65 @@ export function ProductForm({
   const [formData, setFormData] = useState<Product>(
     product
       ? {
-          ...product,
+        ...product,
 
-          name: product.name || '',
+        name: product.name || '',
 
-          price:
-            Number(product.price) || 0,
+        price:
+          Number(product.price) || 0,
 
-          stock:
-            Number(product.stock) || 0,
+        stock:
+          Number(product.stock) || 0,
 
-          category:
-            product.category || '',
+        category:
+          product.category || '',
 
-          subcategory:
-            product.subcategory || '',
+        subcategory:
+          product.subcategory || '',
 
-          sku:
-            product.sku || '',
+        sku:
+          product.sku || '',
 
-          customizable:
-            product.customizable ? 1 : 0,
+        customizable:
+          product.customizable ? 1 : 0,
 
-          image_customizable:
-            product.image_customizable ? 1 : 0,
+        image_customizable:
+          product.image_customizable ? 1 : 0,
 
-          status:
-            product.status || 'active',
+        status:
+          product.status || 'active',
 
-          color: Array.isArray(product.color)
-            ? product.color
-                .filter(
-                  (c: any) =>
-                    c &&
-                    String(c).trim()
-                )
-                .map((c: any) =>
-                  String(c).trim()
-                )
-            : product.color &&
-                String(product.color).trim()
-              ? [String(product.color).trim()]
-              : [],
-        }
+        color: Array.isArray(product.color)
+          ? product.color
+            .filter(
+              (c: any) =>
+                c &&
+                String(c).trim()
+            )
+            .map((c: any) =>
+              String(c).trim()
+            )
+          : product.color &&
+            String(product.color).trim()
+            ? [String(product.color).trim()]
+            : [],
+      }
       : {
-          id: '',
-          name: '',
-          color: [],
-          category: '',
-          subcategory: '',
-          sku: `SKU-${Date.now()}`,
-          price: '',
-          stock: '',
-          description: '',
-          image: '',
-          customizable: 0,
-          image_customizable: 0,
-          status: 'active',
-          image_urls: [],
-        }
+        id: '',
+        name: '',
+        color: [],
+        category: '',
+        subcategory: '',
+        sku: `SKU-${Date.now()}`,
+        price: '',
+        stock: '',
+        description: '',
+        image: '',
+        customizable: 0,
+        image_customizable: 0,
+        status: 'active',
+        image_urls: [],
+      }
   );
 
   /* =======================================================
@@ -2747,168 +2747,198 @@ export function ProductForm({
      SUBMIT
   ======================================================= */
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Clear previous error
-  setFormError('');
-
-  // ================================
-  // VALIDATION
-  // ================================
-
-  if (!formData.name?.trim()) {
-    setFormError('Please enter the product name.');
-    return;
-  }
-
-  if (!formData.category?.trim()) {
-    setFormError('Please select a product category.');
-    return;
-  }
-
-  if (
-    formData.price === undefined ||
-    formData.price === null ||
-    Number.isNaN(Number(formData.price)) ||
-    Number(formData.price) < 0
-  ) {
-    setFormError('Please enter a valid product price.');
-    return;
-  }
-
-  if (
-    formData.stock === undefined ||
-    formData.stock === null ||
-    Number.isNaN(Number(formData.stock)) ||
-    Number(formData.stock) < 0
-  ) {
-    setFormError('Please enter a valid stock quantity.');
-    return;
-  }
-
-  // ================================
-  // COLOR VALIDATION
-  // ================================
-
-  const invalidColor = imageGroups.some(
-    (group) => !group.color.trim()
-  );
-
-  if (invalidColor) {
-    setFormError(
-      'Please select a valid color for every color variant.'
-    );
-    return;
-  }
-
-  // ================================
-  // DUPLICATE COLORS
-  // ================================
-
-  const colors = imageGroups
-    .map((group) => group.color.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (new Set(colors).size !== colors.length) {
-    setFormError(
-      'You cannot use the same color more than once.'
-    );
-    return;
-  }
-
-  // ================================
-  // SUBMIT
-  // ================================
-
-  setIsSubmitting(true);
-
-  try {
-    const apiFormData = new FormData();
-
-    // Product fields
-    apiFormData.append(
-      'product_name',
-      formData.name || ''
-    );
-
-    apiFormData.append(
-      'category',
-      formData.category || ''
-    );
-
-    apiFormData.append(
-      'subcategory',
-      formData.subcategory || ''
-    );
-
-    apiFormData.append(
-      'sku',
-      formData.sku || ''
-    );
-
-    apiFormData.append(
-      'price',
-      String(formData.price ?? 0)
-    );
-
-    apiFormData.append(
-      'stock',
-      String(formData.stock ?? 0)
-    );
-
-    apiFormData.append(
-      'description',
-      formData.description || ''
-    );
-
-    apiFormData.append(
-      'status',
-      formData.status || 'active'
-    );
-
-    apiFormData.append(
-      'customizable',
-      String(formData.customizable ?? 0)
-    );
-
-    apiFormData.append(
-      'image_customizable',
-      String(formData.image_customizable ?? 0)
-    );
+    // Clear previous error
+    setFormError('');
 
     // ================================
-    // EDIT PRODUCT
+    // VALIDATION
     // ================================
 
-    if (product?.id) {
+    if (!formData.name?.trim()) {
+      setFormError('Please enter the product name.');
+      return;
+    }
+
+    if (!formData.category?.trim()) {
+      setFormError('Please select a product category.');
+      return;
+    }
+
+    if (
+      formData.price === undefined ||
+      formData.price === null ||
+      Number.isNaN(Number(formData.price)) ||
+      Number(formData.price) < 0
+    ) {
+      setFormError('Please enter a valid product price.');
+      return;
+    }
+
+    if (
+      formData.stock === undefined ||
+      formData.stock === null ||
+      Number.isNaN(Number(formData.stock)) ||
+      Number(formData.stock) < 0
+    ) {
+      setFormError('Please enter a valid stock quantity.');
+      return;
+    }
+
+    // ================================
+    // COLOR VALIDATION
+    // ================================
+
+    const invalidColor = imageGroups.some(
+      (group) => !group.color.trim()
+    );
+
+    if (invalidColor) {
+      setFormError(
+        'Please select a valid color for every color variant.'
+      );
+      return;
+    }
+
+    // ================================
+    // DUPLICATE COLORS
+    // ================================
+
+    const colors = imageGroups
+      .map((group) => group.color.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (new Set(colors).size !== colors.length) {
+      setFormError(
+        'You cannot use the same color more than once.'
+      );
+      return;
+    }
+
+    // ================================
+    // SUBMIT
+    // ================================
+
+    setIsSubmitting(true);
+
+    try {
+      const apiFormData = new FormData();
+
+      // Product fields
       apiFormData.append(
-        'product_id',
-        String(product.id)
+        'product_name',
+        formData.name || ''
       );
 
       apiFormData.append(
-        'delete_images',
-        JSON.stringify(deletedImages || [])
+        'category',
+        formData.category || ''
       );
 
-      imageGroups.forEach((group, index) => {
-        const color = group.color.trim();
+      apiFormData.append(
+        'subcategory',
+        formData.subcategory || ''
+      );
 
-        if (!color) return;
+      apiFormData.append(
+        'sku',
+        formData.sku || ''
+      );
 
+      apiFormData.append(
+        'price',
+        String(formData.price ?? 0)
+      );
+
+      apiFormData.append(
+        'stock',
+        String(formData.stock ?? 0)
+      );
+
+      apiFormData.append(
+        'description',
+        formData.description || ''
+      );
+
+      apiFormData.append(
+        'status',
+        formData.status || 'active'
+      );
+
+      apiFormData.append(
+        'customizable',
+        String(formData.customizable ?? 0)
+      );
+
+      apiFormData.append(
+        'image_customizable',
+        String(formData.image_customizable ?? 0)
+      );
+
+      // ================================
+      // EDIT PRODUCT
+      // ================================
+
+      if (product?.id) {
         apiFormData.append(
-          `variants[${index}][color]`,
-          color
+          'product_id',
+          String(product.id)
         );
 
-        group.items.forEach((item) => {
+        apiFormData.append(
+          'delete_images',
+          JSON.stringify(deletedImages || [])
+        );
+
+        imageGroups.forEach((group, index) => {
+          const color = group.color.trim();
+
+          if (!color) return;
+
+          apiFormData.append(
+            `variants[${index}][color]`,
+            color
+          );
+
+          group.items.forEach((item) => {
+            if (
+              item.kind === 'new' &&
+              item.file
+            ) {
+              apiFormData.append(
+                `variants[${index}][images][]`,
+                item.file,
+                item.file.name
+              );
+            }
+
+            if (
+              item.kind === 'existing'
+            ) {
+              apiFormData.append(
+                `variants[${index}][existing_images][]`,
+                item.src.split('/').pop() || item.src
+              );
+            }
+          });
+        });
+
+        apiFormData.append(
+          'delete_similar',
+          JSON.stringify(
+            deletedSimilarImages || []
+          )
+        );
+
+        similarImages.forEach((item) => {
           if (
             item.kind === 'new' &&
             item.file
           ) {
             apiFormData.append(
-              `variants[${index}][images][]`,
+              'similar[]',
               item.file,
               item.file.name
             );
@@ -2918,120 +2948,90 @@ const handleSubmit = async (e: React.FormEvent) => {
             item.kind === 'existing'
           ) {
             apiFormData.append(
-              `variants[${index}][existing_images][]`,
+              'existing_similar[]',
               item.src.split('/').pop() || item.src
             );
           }
         });
-      });
+      }
 
-      apiFormData.append(
-        'delete_similar',
-        JSON.stringify(
-          deletedSimilarImages || []
-        )
-      );
+      // ================================
+      // ADD PRODUCT
+      // ================================
 
-      similarImages.forEach((item) => {
-        if (
-          item.kind === 'new' &&
-          item.file
-        ) {
+      else {
+        imageGroups.forEach((group, index) => {
+          const color = group.color.trim();
+
+          if (!color) return;
+
           apiFormData.append(
-            'similar[]',
-            item.file,
-            item.file.name
+            'colors[]',
+            color
           );
-        }
 
-        if (
-          item.kind === 'existing'
-        ) {
-          apiFormData.append(
-            'existing_similar[]',
-            item.src.split('/').pop() || item.src
-          );
-        }
-      });
-    }
+          group.items.forEach((item) => {
+            if (
+              item.kind === 'new' &&
+              item.file
+            ) {
+              apiFormData.append(
+                `images_${index}[]`,
+                item.file,
+                item.file.name
+              );
+            }
+          });
+        });
 
-    // ================================
-    // ADD PRODUCT
-    // ================================
-
-    else {
-      imageGroups.forEach((group, index) => {
-        const color = group.color.trim();
-
-        if (!color) return;
-
-        apiFormData.append(
-          'colors[]',
-          color
-        );
-
-        group.items.forEach((item) => {
+        similarImages.forEach((item) => {
           if (
             item.kind === 'new' &&
             item.file
           ) {
             apiFormData.append(
-              `images_${index}[]`,
+              'similar[]',
               item.file,
               item.file.name
             );
           }
         });
-      });
+      }
 
-      similarImages.forEach((item) => {
-        if (
-          item.kind === 'new' &&
-          item.file
-        ) {
-          apiFormData.append(
-            'similar[]',
-            item.file,
-            item.file.name
-          );
-        }
-      });
+      console.log(
+        '========== PRODUCT FORM DATA =========='
+      );
+
+      for (const [key, value] of apiFormData.entries()) {
+        console.log(key, value);
+      }
+
+      // IMPORTANT:
+      // Parent MUST throw an error when API fails.
+      await onSubmit(
+        formData,
+        apiFormData
+      );
+
+    } catch (error: any) {
+      console.error(
+        'Product submit error:',
+        error
+      );
+
+      /*
+       * THIS ERROR WILL APPEAR
+       * IN THE POPUP ABOVE THE FORM.
+       */
+      setFormError(
+        error?.message ||
+        'Something went wrong while submitting the product.'
+      );
+
+    } finally {
+      setIsSubmitting(false);
     }
-
-    console.log(
-      '========== PRODUCT FORM DATA =========='
-    );
-
-    for (const [key, value] of apiFormData.entries()) {
-      console.log(key, value);
-    }
-
-    // IMPORTANT:
-    // Parent MUST throw an error when API fails.
-    await onSubmit(
-      formData,
-      apiFormData
-    );
-
-  } catch (error: any) {
-    console.error(
-      'Product submit error:',
-      error
-    );
-
-    /*
-     * THIS ERROR WILL APPEAR
-     * IN THE POPUP ABOVE THE FORM.
-     */
-    setFormError(
-      error?.message ||
-      'Something went wrong while submitting the product.'
-    );
-
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
   /* =======================================================
      INPUT CHANGE
   ======================================================= */
@@ -3053,7 +3053,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       [name]:
         name === 'price' ||
-        name === 'stock'
+          name === 'stock'
           ? value
           : value,
     }));
@@ -3120,9 +3120,9 @@ const handleSubmit = async (e: React.FormEvent) => {
         ) =>
           index === groupIndex
             ? {
-                ...group,
-                color: value,
-              }
+              ...group,
+              color: value,
+            }
             : group
       );
 
@@ -3205,15 +3205,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                     )
                       ? current
                       : [
-                          ...current,
-                          filename,
-                        ]
+                        ...current,
+                        filename,
+                      ]
                 );
               }
 
               if (
                 item.kind ===
-                  'new' &&
+                'new' &&
                 item.src.startsWith(
                   'blob:'
                 )
@@ -3366,7 +3366,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
             const removed =
               group.items[
-                itemIndex
+              itemIndex
               ];
 
             if (
@@ -3386,15 +3386,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                   )
                     ? current
                     : [
-                        ...current,
-                        filename,
-                      ]
+                      ...current,
+                      filename,
+                    ]
               );
             }
 
             if (
               removed?.kind ===
-                'new' &&
+              'new' &&
               removed.src.startsWith(
                 'blob:'
               )
@@ -3534,15 +3534,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                 )
                   ? current
                   : [
-                      ...current,
-                      filename,
-                    ]
+                    ...current,
+                    filename,
+                  ]
             );
           }
 
           if (
             removed.kind ===
-              'new' &&
+            'new' &&
             removed.src.startsWith(
               'blob:'
             )
@@ -3568,70 +3568,69 @@ const handleSubmit = async (e: React.FormEvent) => {
      RENDER
   ======================================================= */
 
-return (
-  <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm">
+  return (
+    <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm">
 
-    {/* ERROR POPUP */}
-    {formError && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      {/* ERROR POPUP */}
+      {formError && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
 
-        <div
-          className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* HEADER */}
-          <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* HEADER */}
+            <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
 
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="h-6 w-6 text-red-600" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-700">
+                  Error
+                </h3>
+
+                <p className="text-xs text-red-500">
+                  Product could not be saved
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setFormError('')}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-red-700">
-                Error
-              </h3>
-
-              <p className="text-xs text-red-500">
-                Product could not be saved
+            {/* MESSAGE */}
+            <div className="px-6 py-7">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                {formError}
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setFormError('')}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* MESSAGE */}
-          <div className="px-6 py-7">
-            <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-              {formError}
-            </p>
-          </div>
-
-          {/* BUTTON */}
-          <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
-            <button
-              type="button"
-              onClick={() => setFormError('')}
-              className="rounded-lg bg-red-600 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-            >
-              OK
-            </button>
+            {/* BUTTON */}
+            <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setFormError('')}
+                className="rounded-lg bg-red-600 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {/* MAIN FORM */}
-    <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
-      {/* ...your existing form... */}
-    </div>
-  </div>
-);
+      {/* MAIN FORM */}
+      <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        {/* ...your existing form... */}
+      </div>
+
 
       {/* =================================================
           MAIN PRODUCT FORM
@@ -3756,7 +3755,7 @@ return (
 
                         {!loadingColors &&
                           colorOptions.length ===
-                            0 && (
+                          0 && (
                             <div className="mt-2 text-xs text-red-500">
                               No active colors found.
                             </div>
@@ -3785,24 +3784,24 @@ return (
 
                         {imageGroups.length >
                           1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleRemoveColorGroup(
-                                groupIndex
-                              )
-                            }
-                            className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                          >
-                            Remove Color
-                          </button>
-                        )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleRemoveColorGroup(
+                                  groupIndex
+                                )
+                              }
+                              className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                            >
+                              Remove Color
+                            </button>
+                          )}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                       {group.items.length >
-                      0 ? (
+                        0 ? (
                         group.items.map(
                           (
                             item,
@@ -3832,10 +3831,10 @@ return (
 
                               {itemIndex ===
                                 0 && (
-                                <div className="absolute -left-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-yellow-400 shadow">
-                                  <Star className="h-3.5 w-3.5 text-white" />
-                                </div>
-                              )}
+                                  <div className="absolute -left-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-yellow-400 shadow">
+                                    <Star className="h-3.5 w-3.5 text-white" />
+                                  </div>
+                                )}
 
                               <button
                                 type="button"
@@ -3914,7 +3913,7 @@ return (
             </div>
 
             {similarImages.length >
-            0 ? (
+              0 ? (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {similarImages.map(
                   (
@@ -4176,7 +4175,7 @@ return (
 
                 <p className="text-sm text-slate-500">
                   {formData.status ===
-                  'active'
+                    'active'
                     ? 'Active'
                     : 'Inactive'}
                 </p>
@@ -4267,11 +4266,10 @@ return (
               disabled={
                 isSubmitting
               }
-              className={`rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition ${
-                isSubmitting
+              className={`rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition ${isSubmitting
                   ? 'cursor-not-allowed opacity-80'
                   : 'hover:bg-blue-700'
-              }`}
+                }`}
             >
               <span className="inline-flex items-center justify-center gap-2">
                 {isSubmitting && (
