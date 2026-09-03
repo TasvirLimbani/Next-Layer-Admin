@@ -3569,19 +3569,41 @@ export function ProductForm({
   ======================================================= */
 
   return (
-    <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm">
 
-      {/* ERROR POPUP */}
+      {/* =================================================
+          ERROR POPUP
+      ================================================= */}
+
       {formError && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-
+        <div
+          className="
+            fixed inset-0
+            z-[9999]
+            flex items-center justify-center
+            bg-black/60
+            p-4
+            backdrop-blur-sm
+          "
+        >
           <div
-            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            className="
+              relative
+              w-full
+              max-w-md
+              overflow-hidden
+              rounded-2xl
+              bg-white
+              shadow-2xl
+              animate-in
+              fade-in
+              zoom-in-95
+              duration-200
+            "
           >
             {/* HEADER */}
-            <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
 
+            <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
                 <AlertCircle className="h-6 w-6 text-red-600" />
               </div>
@@ -3592,13 +3614,15 @@ export function ProductForm({
                 </h3>
 
                 <p className="text-xs text-red-500">
-                  Product could not be saved
+                  Product could not be added
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setFormError('')}
+                onClick={() =>
+                  setFormError('')
+                }
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100"
               >
                 <X className="h-5 w-5" />
@@ -3606,18 +3630,22 @@ export function ProductForm({
             </div>
 
             {/* MESSAGE */}
-            <div className="px-6 py-7">
-              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+
+            <div className="px-6 py-6">
+              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
                 {formError}
               </p>
             </div>
 
             {/* BUTTON */}
+
             <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
               <button
                 type="button"
-                onClick={() => setFormError('')}
-                className="rounded-lg bg-red-600 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                onClick={() =>
+                  setFormError('')
+                }
+                className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
               >
                 OK
               </button>
@@ -3626,17 +3654,11 @@ export function ProductForm({
         </div>
       )}
 
-      {/* MAIN FORM */}
-      <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        {/* ...your existing form... */}
-      </div>
-
-
       {/* =================================================
           MAIN PRODUCT FORM
       ================================================= */}
 
-      <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-2xl bg-white shadow-2xl">
 
         {/* HEADER */}
 
@@ -4267,8 +4289,8 @@ export function ProductForm({
                 isSubmitting
               }
               className={`rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition ${isSubmitting
-                  ? 'cursor-not-allowed opacity-80'
-                  : 'hover:bg-blue-700'
+                ? 'cursor-not-allowed opacity-80'
+                : 'hover:bg-blue-700'
                 }`}
             >
               <span className="inline-flex items-center justify-center gap-2">
