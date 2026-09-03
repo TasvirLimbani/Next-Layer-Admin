@@ -1411,6 +1411,7 @@ const COLOR_MAP: Record<string, string> = {
   purple: "#800080",
   pink: "#FFC0CB",
   black: "#000000",
+  "jet black": "#0A0A0A",
   white: "#FFFFFF",
   gray: "#808080",
   grey: "#808080",
@@ -1538,7 +1539,7 @@ const COLOR_MAP: Record<string, string> = {
   cream: "#FFFDD0",
   tan: "#D2B48C",
   chocolate: "#7B3F00",
-  coffee: "#6F4E37",
+  "coffee brown": "#6F4E37",
   caramel: "#C68E17",
 
   /* White */
@@ -1566,6 +1567,7 @@ const COLOR_MAP: Record<string, string> = {
   turquoise: "#40E0D0",
   magenta: "#FF00FF",
   gold: "#FFD700",
+  bronze: "#CD7F32",
   rose: "#FF007F",
   coral: "#FF7F50",
   peach: "#FFE5B4",
