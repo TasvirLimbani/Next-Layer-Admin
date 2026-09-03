@@ -2250,8 +2250,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-import { Product } from './mock-data';
 import {
   X,
   Upload,
@@ -2265,6 +2263,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+import { Product } from './mock-data';
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -2345,21 +2344,23 @@ function createImageItem(
 ========================================================= */
 
 function toDisplayUrl(value: string) {
-  if (!value) {
+  const cleanValue = String(value || '').trim();
+
+  if (!cleanValue) {
     return '';
   }
 
   if (
-    value.startsWith('http://') ||
-    value.startsWith('https://') ||
-    value.startsWith('blob:') ||
-    value.startsWith('data:') ||
-    value.startsWith('/')
+    cleanValue.startsWith('http://') ||
+    cleanValue.startsWith('https://') ||
+    cleanValue.startsWith('blob:') ||
+    cleanValue.startsWith('data:') ||
+    cleanValue.startsWith('/')
   ) {
-    return value;
+    return cleanValue;
   }
 
-  return `http://nextlayer.soon.it/images/${value.replace(
+  return `http://nextlayer.soon.it/images/${cleanValue.replace(
     /^\/+/,
     ''
   )}`;
@@ -2367,22 +2368,45 @@ function toDisplayUrl(value: string) {
 
 /* =========================================================
    IMAGE PREVIEW
+
+   IMPORTANT:
+   Remote images are passed through the Next.js proxy.
+
+   This avoids:
+   - mixed-content errors on HTTPS website
+   - direct HTTP image blocking
+   - CORS problems
 ========================================================= */
 
 function getPreviewSrc(value: string) {
-  if (!value) {
+  const cleanValue = String(value || '').trim();
+
+  if (!cleanValue) {
     return '/placeholder.svg';
   }
 
+  /* Local browser preview */
   if (
-    value.startsWith('blob:') ||
-    value.startsWith('data:')
+    cleanValue.startsWith('blob:') ||
+    cleanValue.startsWith('data:')
   ) {
-    return value;
+    return cleanValue;
   }
 
+  /* Already proxied */
+  if (cleanValue.startsWith('/api/image-proxy')) {
+    return cleanValue;
+  }
+
+  /* Same-origin/local image */
+  if (cleanValue.startsWith('/')) {
+    return cleanValue;
+  }
+
+  const displayUrl = toDisplayUrl(cleanValue);
+
   return `/api/image-proxy?url=${encodeURIComponent(
-    value
+    displayUrl
   )}`;
 }
 
@@ -2444,10 +2468,15 @@ function buildInitialImageGroups(
         color,
 
         items: imageValues
-          .map((value: any) => String(value).trim())
+          .map((value: any) =>
+            String(value).trim()
+          )
           .filter(Boolean)
           .map((value: string) =>
-            createImageItem('existing', value)
+            createImageItem(
+              'existing',
+              value
+            )
           ),
       };
     })
@@ -2458,9 +2487,13 @@ function buildInitialImageGroups(
    SYNC COLORS
 ========================================================= */
 
-function syncColorState(groups: ImageGroup[]) {
+function syncColorState(
+  groups: ImageGroup[]
+) {
   return groups
-    .map((group) => group.color.trim())
+    .map((group) =>
+      group.color.trim()
+    )
     .filter(Boolean);
 }
 
@@ -2477,15 +2510,15 @@ export function ProductForm({
      ERROR POPUP
   ======================================================= */
 
-  const [formError, setFormError] = useState('');
+  const [formError, setFormError] =
+    useState('');
 
   /* =======================================================
      COLOR API STATE
   ======================================================= */
 
-  const [colorOptions, setColorOptions] = useState<
-    ApiColor[]
-  >([]);
+  const [colorOptions, setColorOptions] =
+    useState<ApiColor[]>([]);
 
   const [loadingColors, setLoadingColors] =
     useState(false);
@@ -2494,69 +2527,85 @@ export function ProductForm({
      FORM DATA
   ======================================================= */
 
-  const [formData, setFormData] = useState<Product>(
-    product
-      ? {
-          ...product,
+  const [formData, setFormData] =
+    useState<Product>(
+      product
+        ? {
+            ...product,
 
-          name: product.name || '',
+            name:
+              product.name || '',
 
-          price:
-            Number(product.price) || 0,
+            price:
+              Number(product.price) || 0,
 
-          stock:
-            Number(product.stock) || 0,
+            stock:
+              Number(product.stock) || 0,
 
-          category:
-            product.category || '',
+            category:
+              product.category || '',
 
-          subcategory:
-            product.subcategory || '',
+            subcategory:
+              product.subcategory || '',
 
-          sku:
-            product.sku || '',
+            sku:
+              product.sku || '',
 
-          customizable:
-            product.customizable ? 1 : 0,
+            customizable:
+              product.customizable
+                ? 1
+                : 0,
 
-          image_customizable:
-            product.image_customizable ? 1 : 0,
+            image_customizable:
+              product.image_customizable
+                ? 1
+                : 0,
 
-          status:
-            product.status || 'active',
+            status:
+              product.status ||
+              'active',
 
-          color: Array.isArray(product.color)
-            ? product.color
-                .filter(
-                  (c: any) =>
-                    c &&
-                    String(c).trim()
-                )
-                .map((c: any) =>
-                  String(c).trim()
-                )
-            : product.color &&
-                String(product.color).trim()
-              ? [String(product.color).trim()]
-              : [],
-        }
-      : {
-          id: '',
-          name: '',
-          color: [],
-          category: '',
-          subcategory: '',
-          sku: `SKU-${Date.now()}`,
-           price: '',
-  stock: '',
-          description: '',
-          image: '',
-          customizable: 0,
-          image_customizable: 0,
-          status: 'active',
-          image_urls: [],
-        }
-  );
+            color:
+              Array.isArray(
+                product.color
+              )
+                ? product.color
+                    .filter(
+                      (c: any) =>
+                        c &&
+                        String(c).trim()
+                    )
+                    .map((c: any) =>
+                      String(c).trim()
+                    )
+                : product.color &&
+                    String(
+                      product.color
+                    ).trim()
+                  ? [
+                      String(
+                        product.color
+                      ).trim(),
+                    ]
+                  : [],
+          }
+        : {
+            id: '',
+            name: '',
+            color: [],
+            category: '',
+            subcategory: '',
+            sku: `SKU-${Date.now()}`,
+            price: '',
+            stock: '',
+            description: '',
+            image: '',
+            customizable: 0,
+            image_customizable: 0,
+            status: 'active',
+            image_urls: [],
+          }
+    );
 
   /* =======================================================
      COLOR IMAGE STATE
@@ -2598,10 +2647,13 @@ export function ProductForm({
       try {
         setLoadingColors(true);
 
-        const response = await fetch('/api/color', {
-          method: 'GET',
-          cache: 'no-store',
-        });
+        const response = await fetch(
+          '/api/color',
+          {
+            method: 'GET',
+            cache: 'no-store',
+          }
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -2609,7 +2661,8 @@ export function ProductForm({
           );
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (
           data.status &&
@@ -2618,10 +2671,13 @@ export function ProductForm({
           const activeColors =
             data.colors.filter(
               (color: ApiColor) =>
-                color.status === 'active'
+                color.status ===
+                'active'
             );
 
-          setColorOptions(activeColors);
+          setColorOptions(
+            activeColors
+          );
         } else {
           setColorOptions([]);
         }
@@ -2656,7 +2712,9 @@ export function ProductForm({
     /* COLOR VARIANTS */
 
     const groups =
-      buildInitialImageGroups(product);
+      buildInitialImageGroups(
+        product
+      );
 
     setImageGroups(groups);
 
@@ -2664,7 +2722,10 @@ export function ProductForm({
       ...prev,
 
       color: groups
-        .map((group) => group.color)
+        .map(
+          (group) =>
+            group.color
+        )
         .filter(Boolean),
     }));
 
@@ -2688,12 +2749,14 @@ export function ProductForm({
             let src = '';
 
             if (
-              typeof item === 'string'
+              typeof item ===
+              'string'
             ) {
               src = item;
             } else if (
               item &&
-              typeof item === 'object'
+              typeof item ===
+                'object'
             ) {
               src =
                 item.image_url ||
@@ -2707,9 +2770,7 @@ export function ProductForm({
 
             return {
               id: `similar-existing-${index}-${src}`,
-
               kind: 'existing' as const,
-
               src: String(src),
             };
           }
@@ -2735,8 +2796,7 @@ export function ProductForm({
   ) => {
     e.preventDefault();
 
-    /* Clear old error */
-
+    /* Clear previous error */
     setFormError('');
 
     /* =====================================================
@@ -2758,9 +2818,12 @@ export function ProductForm({
     }
 
     if (
-      formData.price === undefined ||
+      formData.price ===
+        undefined ||
       formData.price === null ||
-      Number.isNaN(Number(formData.price)) ||
+      Number.isNaN(
+        Number(formData.price)
+      ) ||
       Number(formData.price) < 0
     ) {
       setFormError(
@@ -2770,9 +2833,12 @@ export function ProductForm({
     }
 
     if (
-      formData.stock === undefined ||
+      formData.stock ===
+        undefined ||
       formData.stock === null ||
-      Number.isNaN(Number(formData.stock)) ||
+      Number.isNaN(
+        Number(formData.stock)
+      ) ||
       Number(formData.stock) < 0
     ) {
       setFormError(
@@ -2802,11 +2868,14 @@ export function ProductForm({
        DUPLICATE COLOR VALIDATION
     ===================================================== */
 
-    const colors = imageGroups
-      .map((group) =>
-        group.color.trim().toLowerCase()
-      )
-      .filter(Boolean);
+    const colors =
+      imageGroups
+        .map((group) =>
+          group.color
+            .trim()
+            .toLowerCase()
+        )
+        .filter(Boolean);
 
     const hasDuplicateColors =
       new Set(colors).size !==
@@ -2824,6 +2893,7 @@ export function ProductForm({
     ===================================================== */
 
     setIsSubmitting(true);
+    setFormError('');
 
     try {
       const apiFormData =
@@ -2887,7 +2957,8 @@ export function ProductForm({
       apiFormData.append(
         'image_customizable',
         String(
-          formData.image_customizable ?? 0
+          formData.image_customizable ??
+            0
         )
       );
 
@@ -2931,7 +3002,8 @@ export function ProductForm({
                 /* NEW IMAGE */
 
                 if (
-                  item.kind === 'new' &&
+                  item.kind ===
+                    'new' &&
                   item.file
                 ) {
                   apiFormData.append(
@@ -2947,12 +3019,15 @@ export function ProductForm({
                   item.kind ===
                   'existing'
                 ) {
-                  apiFormData.append(
-                    `variants[${index}][existing_images][]`,
+                  const filename =
                     item.src
                       .split('/')
                       .pop() ||
-                      item.src
+                    item.src;
+
+                  apiFormData.append(
+                    `variants[${index}][existing_images][]`,
+                    filename
                   );
                 }
               }
@@ -2967,16 +3042,18 @@ export function ProductForm({
         apiFormData.append(
           'delete_similar',
           JSON.stringify(
-            deletedSimilarImages || []
+            deletedSimilarImages ||
+              []
           )
         );
 
         similarImages.forEach(
           (item) => {
-            /* NEW SIMILAR IMAGE */
+            /* NEW */
 
             if (
-              item.kind === 'new' &&
+              item.kind ===
+                'new' &&
               item.file
             ) {
               apiFormData.append(
@@ -2986,18 +3063,21 @@ export function ProductForm({
               );
             }
 
-            /* EXISTING SIMILAR IMAGE */
+            /* EXISTING */
 
             if (
               item.kind ===
               'existing'
             ) {
-              apiFormData.append(
-                'existing_similar[]',
+              const filename =
                 item.src
                   .split('/')
                   .pop() ||
-                  item.src
+                item.src;
+
+              apiFormData.append(
+                'existing_similar[]',
+                filename
               );
             }
           }
@@ -3028,7 +3108,8 @@ export function ProductForm({
             group.items.forEach(
               (item) => {
                 if (
-                  item.kind === 'new' &&
+                  item.kind ===
+                    'new' &&
                   item.file
                 ) {
                   apiFormData.append(
@@ -3047,7 +3128,8 @@ export function ProductForm({
         similarImages.forEach(
           (item) => {
             if (
-              item.kind === 'new' &&
+              item.kind ===
+                'new' &&
               item.file
             ) {
               apiFormData.append(
@@ -3068,12 +3150,10 @@ export function ProductForm({
         '========== PRODUCT FORM DATA =========='
       );
 
-      for (
-        const [
-          key,
-          value,
-        ] of apiFormData.entries()
-      ) {
+      for (const [
+        key,
+        value,
+      ] of apiFormData.entries()) {
         console.log(
           key,
           value
@@ -3081,28 +3161,53 @@ export function ProductForm({
       }
 
       /* =================================================
-         SUBMIT TO PARENT
+         IMPORTANT
+
+         Parent onSubmit MUST THROW API ERROR.
+
+         If API fails, this catch displays popup.
       ================================================= */
 
       await onSubmit(
         formData,
         apiFormData
       );
+
+      /*
+       * Do NOT close the form here.
+       *
+       * The parent decides when the operation
+       * was successful and can close the form.
+       */
     } catch (error: any) {
       console.error(
         'Product submit error:',
         error
       );
 
-      /*
-       * This error will now appear
-       * ABOVE the entire product form.
-       */
+      let message =
+        'Something went wrong while submitting the product.';
 
-      setFormError(
-        error?.message ||
-          'Something went wrong while submitting the product.'
-      );
+      if (
+        error instanceof Error &&
+        error.message
+      ) {
+        message = error.message;
+      } else if (
+        typeof error ===
+          'string' &&
+        error.trim()
+      ) {
+        message = error;
+      } else if (
+        error?.message
+      ) {
+        message = String(
+          error.message
+        );
+      }
+
+      setFormError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -3130,7 +3235,7 @@ export function ProductForm({
       [name]:
         name === 'price' ||
         name === 'stock'
-          ? Number(value)
+          ? value
           : value,
     }));
   };
@@ -3189,19 +3294,20 @@ export function ProductForm({
     value: string
   ) => {
     setImageGroups((prev) => {
-      const next = prev.map(
-        (
-          group,
-          index
-        ) =>
-          index ===
-          groupIndex
-            ? {
-                ...group,
-                color: value,
-              }
-            : group
-      );
+      const next =
+        prev.map(
+          (
+            group,
+            index
+          ) =>
+            index ===
+            groupIndex
+              ? {
+                  ...group,
+                  color: value,
+                }
+              : group
+        );
 
       setFormData(
         (current) => ({
@@ -3232,9 +3338,7 @@ export function ProductForm({
 
           {
             id: `group-${Date.now()}-${prev.length}`,
-
             color: '',
-
             items: [],
           },
         ];
@@ -3258,74 +3362,78 @@ export function ProductForm({
      REMOVE COLOR GROUP
   ======================================================= */
 
-  const handleRemoveColorGroup =
-    (groupIndex: number) => {
-      setImageGroups((prev) => {
-        const removed =
-          prev[groupIndex];
+  const handleRemoveColorGroup = (
+    groupIndex: number
+  ) => {
+    setImageGroups((prev) => {
+      const removed =
+        prev[groupIndex];
 
-        if (removed) {
-          removed.items.forEach(
-            (item) => {
-              if (
-                item.kind ===
-                'existing'
-              ) {
-                const filename =
-                  item.src
-                    .split('/')
-                    .pop() ||
-                  item.src;
+      if (removed) {
+        removed.items.forEach(
+          (item) => {
+            if (
+              item.kind ===
+              'existing'
+            ) {
+              const filename =
+                item.src
+                  .split('/')
+                  .pop() ||
+                item.src;
 
-                setDeletedImages(
-                  (current) =>
-                    current.includes(
-                      filename
-                    )
-                      ? current
-                      : [
-                          ...current,
-                          filename,
-                        ]
-                );
-              }
-
-              if (
-                item.kind ===
-                  'new' &&
-                item.src.startsWith(
-                  'blob:'
-                )
-              ) {
-                URL.revokeObjectURL(
-                  item.src
-                );
-              }
+              setDeletedImages(
+                (current) =>
+                  current.includes(
+                    filename
+                  )
+                    ? current
+                    : [
+                        ...current,
+                        filename,
+                      ]
+              );
             }
-          );
-        }
 
-        const next =
-          prev.filter(
-            (_, index) =>
-              index !==
-              groupIndex
-          );
+            if (
+              item.kind ===
+                'new' &&
+              item.src.startsWith(
+                'blob:'
+              )
+            ) {
+              URL.revokeObjectURL(
+                item.src
+              );
+            }
+          }
+        );
+      }
 
-        setFormData(
-          (current) => ({
-            ...current,
-
-            color:
-              syncColorState(
-                next
-              ),
-          })
+      const next =
+        prev.filter(
+          (
+            _,
+            index
+          ) =>
+            index !==
+            groupIndex
         );
 
-        return next;
-      });
-    };
+      setFormData(
+        (current) => ({
+          ...current,
+
+          color:
+            syncColorState(
+              next
+            ),
+        })
+      );
+
+      return next;
+    });
+  };
 
   /* =======================================================
      COLOR IMAGE UPLOAD
@@ -3381,6 +3489,8 @@ export function ProductForm({
       e.target.value = '';
       return;
     }
+
+    setFormError('');
 
     setImageGroups(
       (prev) =>
@@ -3556,6 +3666,8 @@ export function ProductForm({
         return;
       }
 
+      setFormError('');
+
       setSimilarImages(
         (prev) => [
           ...prev,
@@ -3596,7 +3708,7 @@ export function ProductForm({
             return prev;
           }
 
-          /* EXISTING IMAGE */
+          /* EXISTING */
 
           if (
             removed.kind ===
@@ -3621,7 +3733,7 @@ export function ProductForm({
             );
           }
 
-          /* NEW IMAGE */
+          /* NEW */
 
           if (
             removed.kind ===
@@ -3659,14 +3771,26 @@ export function ProductForm({
       ================================================= */}
 
       {formError && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (
+              e.target ===
+              e.currentTarget
+            ) {
+              setFormError('');
+            }
+          }}
+        >
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
             {/* ERROR HEADER */}
 
             <div className="flex items-center gap-3 border-b border-red-100 bg-red-50 px-6 py-5">
-
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
                 <AlertCircle className="h-6 w-6 text-red-600" />
               </div>
@@ -3677,7 +3801,7 @@ export function ProductForm({
                 </h3>
 
                 <p className="text-xs text-red-500">
-                  Please check the information below
+                  Product could not be saved
                 </p>
               </div>
 
@@ -3695,7 +3819,7 @@ export function ProductForm({
             {/* ERROR MESSAGE */}
 
             <div className="px-6 py-6">
-              <p className="text-sm leading-6 text-slate-700">
+              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
                 {formError}
               </p>
             </div>
@@ -3703,17 +3827,15 @@ export function ProductForm({
             {/* ERROR BUTTON */}
 
             <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
-
               <button
                 type="button"
                 onClick={() =>
                   setFormError('')
                 }
-                className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                className="rounded-lg bg-red-600 px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
               >
                 OK
               </button>
-
             </div>
           </div>
         </div>
@@ -3725,14 +3847,10 @@ export function ProductForm({
 
       <div className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+        {/* HEADER */}
 
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-8 py-6">
-
           <div className="flex items-center gap-4">
-
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
               <Package className="h-6 w-6 text-blue-600" />
             </div>
@@ -3750,7 +3868,6 @@ export function ProductForm({
                   : 'Create new product'}
               </p>
             </div>
-
           </div>
 
           <button
@@ -3761,26 +3878,20 @@ export function ProductForm({
           >
             <X className="h-6 w-6 text-slate-600" />
           </button>
-
         </div>
 
-        {/* =================================================
-            FORM
-        ================================================= */}
+        {/* FORM */}
 
         <form
           onSubmit={handleSubmit}
           className="space-y-8 p-8"
         >
-
           {/* =================================================
               COLOR VARIANTS
           ================================================= */}
 
           <div>
-
             <div className="mb-3">
-
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <Tag className="h-4 w-4 text-blue-600" />
 
@@ -3794,28 +3905,22 @@ export function ProductForm({
               <p className="mt-1 text-xs text-slate-500">
                 Add color-specific images only if this product has color variants.
               </p>
-
             </div>
 
             <div className="space-y-4">
-
               {imageGroups.map(
                 (
                   group,
                   groupIndex
                 ) => (
-
                   <div
                     key={group.id}
                     className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                   >
-
                     {/* COLOR HEADER */}
 
                     <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-
                       <div className="flex-1">
-
                         <label className="mb-2 block text-sm font-medium text-slate-700">
                           Color {groupIndex + 1}
                         </label>
@@ -3835,7 +3940,6 @@ export function ProductForm({
                           }
                           className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                         >
-
                           <option value="">
                             {loadingColors
                               ? 'Loading Colors...'
@@ -3858,7 +3962,6 @@ export function ProductForm({
                               </option>
                             )
                           )}
-
                         </select>
 
                         {!loadingColors &&
@@ -3868,15 +3971,12 @@ export function ProductForm({
                               No active colors found.
                             </div>
                           )}
-
                       </div>
 
                       {/* COLOR BUTTONS */}
 
                       <div className="flex items-center gap-2">
-
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
-
                           <Upload className="h-4 w-4" />
 
                           Add Images
@@ -3893,7 +3993,6 @@ export function ProductForm({
                               )
                             }
                           />
-
                         </label>
 
                         {imageGroups.length >
@@ -3910,51 +4009,39 @@ export function ProductForm({
                             Remove Color
                           </button>
                         )}
-
                       </div>
-
                     </div>
 
                     {/* COLOR IMAGES */}
 
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-
                       {group.items.length >
                       0 ? (
-
                         group.items.map(
                           (
                             item,
                             itemIndex
                           ) => (
-
                             <div
                               key={
                                 item.id
                               }
                               className="relative rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
                             >
-
                               <div className="h-24 overflow-hidden rounded-lg bg-slate-100">
-
                                 <img
                                   src={getPreviewSrc(
-                                    toDisplayUrl(
-                                      item.src
-                                    )
+                                    item.src
                                   )}
                                   alt={`${group.color || 'color'}-${itemIndex + 1}`}
                                   className="h-full w-full object-cover"
                                   onError={(
                                     event
                                   ) => {
-                                    (
-                                      event.currentTarget
-                                    ).src =
+                                    event.currentTarget.src =
                                       '/placeholder.svg';
                                   }}
                                 />
-
                               </div>
 
                               {/* PRIMARY */}
@@ -3979,32 +4066,23 @@ export function ProductForm({
                                 <Trash2 className="h-4 w-4" />
                                 Remove
                               </button>
-
                             </div>
                           )
                         )
-
                       ) : (
-
                         <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
                           No images added for this color yet.
                         </div>
-
                       )}
-
                     </div>
-
                   </div>
-
                 )
               )}
-
             </div>
 
             {/* ADD COLOR */}
 
             <div className="mt-4 flex justify-start">
-
               <button
                 type="button"
                 onClick={
@@ -4014,9 +4092,7 @@ export function ProductForm({
               >
                 + Add Another Color
               </button>
-
             </div>
-
           </div>
 
           {/* =================================================
@@ -4024,27 +4100,20 @@ export function ProductForm({
           ================================================= */}
 
           <div>
-
             <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-
               <div>
-
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-
                   <Tag className="h-4 w-4 text-purple-600" />
 
                   Similar Images
-
                 </label>
 
                 <p className="mt-1 text-xs text-slate-500">
                   Add images of similar or related products.
                 </p>
-
               </div>
 
               <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700">
-
                 <Upload className="h-4 w-4" />
 
                 Add Similar Images
@@ -4058,49 +4127,37 @@ export function ProductForm({
                     handleSimilarImageChange
                   }
                 />
-
               </label>
-
             </div>
 
             {similarImages.length >
             0 ? (
-
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-
                 {similarImages.map(
                   (
                     item,
                     index
                   ) => (
-
                     <div
                       key={
                         item.id
                       }
                       className="relative rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
                     >
-
                       <div className="h-28 overflow-hidden rounded-lg bg-slate-100">
-
                         <img
                           src={getPreviewSrc(
-                            toDisplayUrl(
-                              item.src
-                            )
+                            item.src
                           )}
                           alt={`Similar product ${index + 1}`}
                           className="h-full w-full object-cover"
                           onError={(
                             event
                           ) => {
-                            (
-                              event.currentTarget
-                            ).src =
+                            event.currentTarget.src =
                               '/placeholder.svg';
                           }}
                         />
-
                       </div>
 
                       <div className="mt-2 text-center text-xs font-medium text-slate-500">
@@ -4119,18 +4176,12 @@ export function ProductForm({
                         <Trash2 className="h-4 w-4" />
                         Remove
                       </button>
-
                     </div>
-
                   )
                 )}
-
               </div>
-
             ) : (
-
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-
                 <Upload className="mx-auto h-8 w-8 text-slate-400" />
 
                 <p className="mt-2 text-sm font-medium text-slate-600">
@@ -4140,11 +4191,8 @@ export function ProductForm({
                 <p className="mt-1 text-xs text-slate-400">
                   Upload images of similar products
                 </p>
-
               </div>
-
             )}
-
           </div>
 
           {/* =================================================
@@ -4152,7 +4200,6 @@ export function ProductForm({
           ================================================= */}
 
           <div>
-
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <Tag className="h-4 w-4 text-blue-600" />
               Product Name
@@ -4171,7 +4218,6 @@ export function ProductForm({
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               required
             />
-
           </div>
 
           {/* =================================================
@@ -4179,7 +4225,6 @@ export function ProductForm({
           ================================================= */}
 
           <div>
-
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <Package className="h-4 w-4 text-blue-600" />
               Category
@@ -4197,7 +4242,6 @@ export function ProductForm({
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               required
             >
-
               <option value="">
                 Select Category
               </option>
@@ -4212,15 +4256,11 @@ export function ProductForm({
                       category
                     }
                   >
-                    {
-                      category
-                    }
+                    {category}
                   </option>
                 )
               )}
-
             </select>
-
           </div>
 
           {/* =================================================
@@ -4228,7 +4268,6 @@ export function ProductForm({
           ================================================= */}
 
           <div>
-
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <Tag className="h-4 w-4 text-blue-600" />
               Subcategory
@@ -4247,7 +4286,6 @@ export function ProductForm({
               placeholder="Enter subcategory"
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
-
           </div>
 
           {/* =================================================
@@ -4255,55 +4293,63 @@ export function ProductForm({
           ================================================= */}
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
             <div>
-
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <DollarSign className="h-4 w-4 text-amber-600" />
                 Price
               </label>
 
-            <input
-  type="number"
-  min="0"
-  step="0.01"
-  value={formData.price}
-  onChange={(e) => {
-    setFormData((prev) => ({
-      ...prev,
-      price: e.target.value,
-    }));
-  }}
-  placeholder="Enter price"
-  className="w-full rounded-lg border px-3 py-2"
-/>
-
+              <input
+                type="number"
+                name="price"
+                min="0"
+                step="0.01"
+                value={
+                  formData.price
+                }
+                onChange={(e) => {
+                  setFormData(
+                    (prev) => ({
+                      ...prev,
+                      price:
+                        e.target
+                          .value,
+                    })
+                  );
+                }}
+                placeholder="Enter price"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
             </div>
 
             <div>
-
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <Boxes className="h-4 w-4 text-amber-600" />
                 Stock
               </label>
 
-            <input
-  type="number"
-  min="0"
-  step="1"
-  value={formData.stock}
-  onChange={(e) => {
-    setFormData((prev) => ({
-      ...prev,
-      stock: e.target.value,
-    }));
-  }}
-  placeholder="Enter stock"
-  className="w-full rounded-lg border px-3 py-2"
-/>
-
+              <input
+                type="number"
+                name="stock"
+                min="0"
+                step="1"
+                value={
+                  formData.stock
+                }
+                onChange={(e) => {
+                  setFormData(
+                    (prev) => ({
+                      ...prev,
+                      stock:
+                        e.target
+                          .value,
+                    })
+                  );
+                }}
+                placeholder="Enter stock"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
             </div>
-
           </div>
 
           {/* =================================================
@@ -4311,7 +4357,6 @@ export function ProductForm({
           ================================================= */}
 
           <div>
-
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <FileText className="h-4 w-4 text-blue-600" />
               Description
@@ -4330,7 +4375,6 @@ export function ProductForm({
               placeholder="Enter product description"
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
-
           </div>
 
           {/* =================================================
@@ -4338,13 +4382,10 @@ export function ProductForm({
           ================================================= */}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-
             {/* STATUS */}
 
             <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-
               <div>
-
                 <p className="font-semibold">
                   Product Status
                 </p>
@@ -4355,7 +4396,6 @@ export function ProductForm({
                     ? 'Active'
                     : 'Inactive'}
                 </p>
-
               </div>
 
               <Switch
@@ -4367,15 +4407,12 @@ export function ProductForm({
                   handleStatusToggle
                 }
               />
-
             </div>
 
             {/* CUSTOMIZABLE */}
 
             <div className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50 p-4">
-
               <div>
-
                 <p className="font-semibold">
                   Customizable
                 </p>
@@ -4385,7 +4422,6 @@ export function ProductForm({
                     ? 'Enabled'
                     : 'Disabled'}
                 </p>
-
               </div>
 
               <Switch
@@ -4397,15 +4433,12 @@ export function ProductForm({
                   handleCustomizableToggle
                 }
               />
-
             </div>
 
             {/* IMAGE CUSTOMIZABLE */}
 
             <div className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50 p-4">
-
               <div>
-
                 <p className="font-semibold">
                   Image Customizable
                 </p>
@@ -4415,7 +4448,6 @@ export function ProductForm({
                     ? 'Enabled'
                     : 'Disabled'}
                 </p>
-
               </div>
 
               <Switch
@@ -4427,9 +4459,7 @@ export function ProductForm({
                   handleImageCustomizableToggle
                 }
               />
-
             </div>
-
           </div>
 
           {/* =================================================
@@ -4437,12 +4467,9 @@ export function ProductForm({
           ================================================= */}
 
           <div className="flex justify-end gap-4 border-t border-slate-200 pt-6">
-
             <button
               type="button"
-              onClick={
-                onClose
-              }
+              onClick={onClose}
               disabled={
                 isSubmitting
               }
@@ -4462,9 +4489,7 @@ export function ProductForm({
                   : 'hover:bg-blue-700'
               }`}
             >
-
               <span className="inline-flex items-center justify-center gap-2">
-
                 {isSubmitting && (
                   <Spinner className="h-4 w-4" />
                 )}
@@ -4476,15 +4501,10 @@ export function ProductForm({
                   : product
                     ? 'Update Product'
                     : 'Create Product'}
-
               </span>
-
             </button>
-
           </div>
-
         </form>
-
       </div>
     </div>
   );
