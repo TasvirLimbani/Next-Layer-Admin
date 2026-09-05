@@ -2277,7 +2277,7 @@ interface ProductFormProps {
   onClose: () => void;
 }
 
-const categories = ['Keychains'];
+const categories = ['Cable Organizer', 'Pen Holder Stand'];
 
 interface ApiColor {
   id: number;

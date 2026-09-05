@@ -1596,11 +1596,6 @@ function getColorPreview(colorName: string): string {
     return COLOR_MAP[normalized];
   }
 
-  /*
-    Check version without spaces.
-    Example:
-    "Baby Pink" -> "babypink"
-  */
   const noSpaces = normalized.replace(/[\s-_]/g, "");
 
   if (COLOR_MAP[noSpaces]) {
@@ -1712,7 +1707,7 @@ export default function ColorPage() {
       if (!response.ok || !data.status) {
         throw new Error(
           data.message ||
-            "Failed to load colors"
+          "Failed to load colors"
         );
       }
 
@@ -1729,7 +1724,7 @@ export default function ColorPage() {
 
       setError(
         err?.message ||
-          "Something went wrong while loading colors"
+        "Something went wrong while loading colors"
       );
     } finally {
       setLoading(false);
@@ -1914,14 +1909,13 @@ export default function ColorPage() {
       if (!response.ok || !data.status) {
         throw new Error(
           data.message ||
-            "Failed to add colors"
+          "Failed to add colors"
         );
       }
 
       setSuccess(
-        `${
-          data.added_count ||
-          uniqueColors.length
+        `${data.added_count ||
+        uniqueColors.length
         } color(s) added successfully.`
       );
 
@@ -1941,7 +1935,7 @@ export default function ColorPage() {
 
       setError(
         err?.message ||
-          "Failed to add colors"
+        "Failed to add colors"
       );
     } finally {
       setSaving(false);
@@ -2014,7 +2008,7 @@ export default function ColorPage() {
       if (!response.ok || !data.status) {
         throw new Error(
           data.message ||
-            "Failed to update color"
+          "Failed to update color"
         );
       }
 
@@ -2036,7 +2030,7 @@ export default function ColorPage() {
 
       setError(
         err?.message ||
-          "Failed to update color"
+        "Failed to update color"
       );
     } finally {
       setSaving(false);
@@ -2101,7 +2095,7 @@ export default function ColorPage() {
       if (!response.ok || !data.status) {
         throw new Error(
           data.message ||
-            "Failed to delete color"
+          "Failed to delete color"
         );
       }
 
@@ -2131,7 +2125,7 @@ export default function ColorPage() {
 
       setError(
         err?.message ||
-          "Failed to delete color"
+        "Failed to delete color"
       );
     } finally {
       setDeleting(null);
@@ -2196,7 +2190,7 @@ export default function ColorPage() {
       if (!response.ok || !data.status) {
         throw new Error(
           data.message ||
-            "Failed to update status"
+          "Failed to update status"
         );
       }
 
@@ -2204,9 +2198,9 @@ export default function ColorPage() {
         prev.map((item) =>
           item.id === color.id
             ? {
-                ...item,
-                status: newStatus,
-              }
+              ...item,
+              status: newStatus,
+            }
             : item
         )
       );
@@ -2218,7 +2212,7 @@ export default function ColorPage() {
 
       setError(
         err?.message ||
-          "Failed to update status"
+        "Failed to update status"
       );
     }
   };
@@ -2328,11 +2322,10 @@ export default function ColorPage() {
             >
 
               <RefreshCw
-                className={`h-4 w-4 ${
-                  loading
-                    ? "animate-spin"
-                    : ""
-                }`}
+                className={`h-4 w-4 ${loading
+                  ? "animate-spin"
+                  : ""
+                  }`}
               />
 
               Refresh
@@ -2475,25 +2468,23 @@ export default function ColorPage() {
                                 color
                               )
                             }
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                              color.status ===
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${color.status ===
                               "active"
-                                ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                            }`}
+                              ? "bg-green-50 text-green-700 hover:bg-green-100"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
                           >
 
                             <span
-                              className={`h-2 w-2 rounded-full ${
-                                color.status ===
+                              className={`h-2 w-2 rounded-full ${color.status ===
                                 "active"
-                                  ? "bg-green-500"
-                                  : "bg-slate-400"
-                              }`}
+                                ? "bg-green-500"
+                                : "bg-slate-400"
+                                }`}
                             />
 
                             {color.status ===
-                            "active"
+                              "active"
                               ? "Active"
                               : "Inactive"}
 
@@ -2505,8 +2496,8 @@ export default function ColorPage() {
 
                           {color.created_at
                             ? new Date(
-                                color.created_at
-                              ).toLocaleDateString()
+                              color.created_at
+                            ).toLocaleDateString()
                             : "-"}
 
                         </td>
@@ -2737,8 +2728,8 @@ export default function ColorPage() {
                         onChange={(e) =>
                           setStatus(
                             e.target.value as
-                              | "active"
-                              | "inactive"
+                            | "active"
+                            | "inactive"
                           )
                         }
                         className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -2803,8 +2794,8 @@ export default function ColorPage() {
                               backgroundColor:
                                 color.trim()
                                   ? getColorPreview(
-                                      color
-                                    )
+                                    color
+                                  )
                                   : "#F1F5F9",
                             }}
                             title={
@@ -2824,9 +2815,8 @@ export default function ColorPage() {
                                   e.target.value
                                 )
                               }
-                              placeholder={`Color ${
-                                index + 1
-                              } - e.g. Baby Pink`}
+                              placeholder={`Color ${index + 1
+                                } - e.g. Baby Pink`}
                               className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
 
