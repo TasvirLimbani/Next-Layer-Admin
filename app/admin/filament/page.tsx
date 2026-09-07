@@ -234,7 +234,7 @@ export default function FilamentPage() {
     setLightboxIndex(
       (prev) =>
         prev ===
-        lightboxImages.length - 1
+          lightboxImages.length - 1
           ? 0
           : prev + 1
     );
@@ -450,7 +450,7 @@ export default function FilamentPage() {
           HEADER
       ================================================= */}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
 
         <div>
 
@@ -486,9 +486,9 @@ export default function FilamentPage() {
           TABLE
       ================================================= */}
 
-      <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+      <div className="hidden overflow-x-auto rounded-2xl border bg-white shadow-sm md:block">
 
-        <table className="w-full min-w-[1000px]">
+        <table className="w-full min-w-[760px]">
 
           {/* =================================================
               TABLE HEADER
@@ -518,9 +518,9 @@ export default function FilamentPage() {
                 SKU
               </th>
 
-              <th className="px-6 py-4 text-left">
+              {/* <th className="px-6 py-4 text-left">
                 Price
-              </th>
+              </th> */}
 
               <th className="px-6 py-4 text-left">
                 Actions
@@ -736,9 +736,9 @@ export default function FilamentPage() {
                           PRICE
                       ================================= */}
 
-                      <td className="px-6 py-4">
+                      {/* <td className="px-6 py-4">
                         ₹{item.price || '0.00'}
-                      </td>
+                      </td> */}
 
                       {/* =================================
                           ACTIONS
@@ -803,6 +803,79 @@ export default function FilamentPage() {
 
         </table>
 
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filaments.map((item) => {
+          const imageUrls = getDisplayImages(item);
+          const colors = getColors(item);
+
+          return (
+            <article
+              key={item.id}
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                {imageUrls[0] ? (
+                  <img
+                    src={getProxyImageUrl(imageUrls[0])}
+                    alt={item.title || 'Filament image'}
+                    className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                    No image
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-semibold text-slate-900">
+                    {item.title || '-'}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {item.category || '-'}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    SKU: {item.sku || '-'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {colors.length > 0 ? colors.map((color, index) => (
+                  <span
+                    key={`${color}-${index}`}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                  >
+                    {color}
+                  </span>
+                )) : (
+                  <span className="text-xs text-slate-400">No color</span>
+                )}
+              </div>
+              <div className="mt-4 flex justify-end gap-2 border-t border-slate-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditData(item);
+                    setOpen(true);
+                  }}
+                  className="rounded-lg bg-blue-100 p-2 text-blue-600"
+                  title="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id)}
+                  className="rounded-lg bg-red-100 p-2 text-red-600"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       {/* =================================================
@@ -871,12 +944,11 @@ export default function FilamentPage() {
                 <img
                   src={getProxyImageUrl(
                     lightboxImages[
-                      lightboxIndex
+                    lightboxIndex
                     ]
                   )}
-                  alt={`Filament image ${
-                    lightboxIndex + 1
-                  }`}
+                  alt={`Filament image ${lightboxIndex + 1
+                    }`}
                   className="h-auto max-h-[80vh] w-full object-contain"
                   onError={(e) => {
 

@@ -626,7 +626,7 @@ export default function OrderDetailPage() {
             ORDER HEADER
         ================================================= */}
 
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
 
           <div className="flex flex-col justify-between gap-6 md:flex-row">
 
@@ -744,7 +744,7 @@ export default function OrderDetailPage() {
             CUSTOMER INFORMATION
         ================================================= */}
 
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
 
           <div className="flex items-center gap-3">
 
@@ -912,7 +912,7 @@ export default function OrderDetailPage() {
 
           {/* ITEMS */}
 
-          <div className="space-y-5 p-8">
+          <div className="space-y-5 p-4 sm:p-8">
 
             {items.length === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center">
@@ -976,7 +976,7 @@ export default function OrderDetailPage() {
 
                         {/* IMAGE */}
 
-                 
+
 
                         {/* =================================================
                             PRODUCT INFORMATION
@@ -1187,7 +1187,7 @@ export default function OrderDetailPage() {
               TOTAL
           ================================================= */}
 
-          <div className="border-t border-slate-200 p-8">
+          <div className="border-t border-slate-200 p-4 sm:p-8">
 
             <div className="ml-auto w-full max-w-sm space-y-4">
 
@@ -1263,7 +1263,7 @@ export default function OrderDetailPage() {
             EXTRA ORDER INFORMATION
         ================================================= */}
 
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
 
           <div className="flex items-center gap-3">
 

@@ -3662,7 +3662,7 @@ export function ProductForm({
 
         {/* HEADER */}
 
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-8 py-6">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-8 sm:py-6">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
               <Package className="h-6 w-6 text-blue-600" />
@@ -3697,7 +3697,7 @@ export function ProductForm({
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-8 p-8"
+          className="space-y-8 p-4 sm:p-8"
         >
           {/* =================================================
               COLOR VARIANTS
@@ -3821,7 +3821,7 @@ export function ProductForm({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                       {group.items.length >
                         0 ? (
                         group.items.map(
@@ -4271,7 +4271,7 @@ export function ProductForm({
               BUTTONS
           ================================================= */}
 
-          <div className="flex justify-end gap-4 border-t border-slate-200 pt-6">
+          <div className="flex flex-col-reverse gap-4 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}

@@ -281,20 +281,24 @@ export async function PUT(
       }
     );
 
+    const statusPayload = new URLSearchParams();
+
+    statusPayload.set('order_id', id);
+
+    for (const [key, value] of Object.entries(body)) {
+      if (value !== undefined && value !== null) {
+        statusPayload.set(key, String(value));
+      }
+    }
+
     const response =
       await fetch(STATUS_API, {
         method: 'POST',
-
         headers: {
           'Content-Type':
-            'application/json',
+            'application/x-www-form-urlencoded',
         },
-
-        body: JSON.stringify({
-          order_id: id,
-          ...body,
-        }),
-
+        body: statusPayload.toString(),
         cache: 'no-store',
       });
 

@@ -10,7 +10,13 @@ import {
 } from 'lucide-react';
 
 import { DataTable } from '@/components/admin/data-table';
-import { StatusBadge } from '@/components/admin/status-badge';
+
+type OrderStatus =
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled';
 
 interface Order {
   id: string;
@@ -18,12 +24,40 @@ interface Order {
   customerEmail: string;
   date: string;
   total: number;
-  status:
-    | 'pending'
-    | 'processing'
-    | 'completed'
-    | 'cancelled';
+  status: OrderStatus;
 }
+
+const statusOptions: Array<{
+  value: OrderStatus;
+  label: string;
+}> = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'processing', label: 'Processing' },
+    { value: 'shipped', label: 'Shipped' },
+    { value: 'completed', label: 'Delivered' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ];
+
+const statusClasses: Record<OrderStatus, string> = {
+  pending:
+    'border-amber-300 bg-amber-50 text-amber-800 focus:border-amber-500 focus:ring-amber-100',
+  processing:
+    'border-blue-300 bg-blue-50 text-blue-800 focus:border-blue-500 focus:ring-blue-100',
+  shipped:
+    'border-violet-300 bg-violet-50 text-violet-800 focus:border-violet-500 focus:ring-violet-100',
+  completed:
+    'border-emerald-300 bg-emerald-50 text-emerald-800 focus:border-emerald-500 focus:ring-emerald-100',
+  cancelled:
+    'border-rose-300 bg-rose-50 text-rose-800 focus:border-rose-500 focus:ring-rose-100',
+};
+
+const apiStatusValues: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  completed: 'Delivered',
+  cancelled: 'Cancelled',
+};
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -33,6 +67,54 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const updateOrderStatus = async (
+    orderId: string,
+    newStatus: OrderStatus
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(orderId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            order_status: apiStatusValues[newStatus],
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.status) {
+        throw new Error(
+          data?.message ||
+          'Failed to update order status'
+        );
+      }
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? { ...order, status: newStatus }
+            : order
+        )
+      );
+    } catch (error) {
+      console.error(
+        'Update order status error:',
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update order status'
+      );
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -60,6 +142,7 @@ export default function OrdersPage() {
         );
       }
 
+
       const rawOrders = Array.isArray(data.orders)
         ? data.orders
         : [];
@@ -68,8 +151,8 @@ export default function OrdersPage() {
         .map((order: any) => {
           const rawStatus = String(
             order.status ??
-              order.order_status ??
-              'pending'
+            order.order_status ??
+            'pending'
           )
             .trim()
             .toLowerCase();
@@ -85,8 +168,11 @@ export default function OrdersPage() {
 
             case 'processing':
             case 'processed':
-            case 'shipped':
               status = 'processing';
+              break;
+
+            case 'shipped':
+              status = 'shipped';
               break;
 
             case 'cancelled':
@@ -103,8 +189,8 @@ export default function OrdersPage() {
           return {
             id: String(
               order.id ??
-                order.order_id ??
-                ''
+              order.order_id ??
+              ''
             ),
 
             customerName:
@@ -126,9 +212,9 @@ export default function OrdersPage() {
             total:
               Number(
                 order.total ??
-                  order.total_amount ??
-                  order.grand_total ??
-                  0
+                order.total_amount ??
+                order.grand_total ??
+                0
               ) || 0,
 
             status,
@@ -306,7 +392,7 @@ export default function OrdersPage() {
 
         {/* TABLE HEADER */}
 
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex flex-col items-start gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
           <h2 className="text-lg font-semibold text-slate-900">
             All Orders
@@ -452,11 +538,32 @@ export default function OrdersPage() {
                   key: 'status',
                   label: 'Status',
 
-                  render: (value) => (
-                    <StatusBadge
-                      status={value as any}
-                    />
-                  ),
+                  render: (value, order) => {
+                    const status = value as OrderStatus;
+
+                    return (
+                      <select
+                        value={status}
+                        onChange={(event) =>
+                          updateOrderStatus(
+                            order.id,
+                            event.target.value as OrderStatus
+                          )
+                        }
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold outline-none transition-colors focus:ring-2 ${statusClasses[status]}`}
+                        aria-label={`Update status for order ${order.id}`}
+                      >
+                        {statusOptions.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  },
                 },
               ]}
 

@@ -1152,7 +1152,7 @@ export function FilamentForm({
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-5 p-6"
+          className="space-y-5 p-4 sm:p-6"
         >
 
           {/* =================================================
@@ -1766,7 +1766,7 @@ export function FilamentForm({
               DIAMETER + WEIGHT
           ================================================= */}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -1816,9 +1816,9 @@ export function FilamentForm({
               PRICE + SKU
           ================================================= */}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-            <div>
+            {/* <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
                 Price
               </label>
@@ -1838,7 +1838,7 @@ export function FilamentForm({
                 }
                 required
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -1897,7 +1897,7 @@ export function FilamentForm({
               BUTTONS
           ================================================= */}
 
-          <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
 
             <button
               type="button"

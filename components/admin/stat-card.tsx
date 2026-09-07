@@ -49,7 +49,7 @@ export function StatCard({
   const colors = colorClasses[color];
 
   return (
-    <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200">
+    <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 shadow-sm transition-all duration-200 hover:border-slate-200 hover:shadow-md sm:p-6">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-slate-600">{title}</p>

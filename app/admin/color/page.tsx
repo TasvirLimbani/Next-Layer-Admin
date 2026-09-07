@@ -2379,174 +2379,237 @@ export default function ColorPage() {
             </div>
 
           ) : (
+            <>
 
-            <div className="overflow-x-auto">
+              <div className="hidden overflow-x-auto md:block">
 
-              <table className="w-full min-w-[700px]">
+                <table className="w-full min-w-[640px]">
 
-                <thead>
+                  <thead>
 
-                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <tr className="border-b border-slate-200 bg-slate-50">
 
-                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      #
-                    </th>
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        #
+                      </th>
 
-                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Color
-                    </th>
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Color
+                      </th>
 
-                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Status
-                    </th>
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                      </th>
 
-                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Created
-                    </th>
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Created
+                      </th>
 
-                    <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Actions
-                    </th>
+                      <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Actions
+                      </th>
 
-                  </tr>
+                    </tr>
 
-                </thead>
+                  </thead>
 
-                <tbody>
+                  <tbody>
 
-                  {filteredColors.map(
-                    (color, index) => (
+                    {filteredColors.map(
+                      (color, index) => (
 
-                      <tr
-                        key={color.id}
-                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
-                      >
+                        <tr
+                          key={color.id}
+                          className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70"
+                        >
 
-                        <td className="px-5 py-4 text-sm font-medium text-slate-500">
-                          {index + 1}
-                        </td>
+                          <td className="px-5 py-4 text-sm font-medium text-slate-500">
+                            {index + 1}
+                          </td>
 
-                        <td className="px-5 py-4">
+                          <td className="px-5 py-4">
 
-                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3">
 
-                            {/* COLOR PREVIEW */}
+                              {/* COLOR PREVIEW */}
 
-                            <div
-                              className="h-9 w-9 shrink-0 rounded-full border border-slate-300 shadow-sm"
-                              style={{
-                                backgroundColor:
-                                  getColorPreview(
-                                    color.name
-                                  ),
-                              }}
-                              title={color.name}
-                            />
+                              <div
+                                className="h-9 w-9 shrink-0 rounded-full border border-slate-300 shadow-sm"
+                                style={{
+                                  backgroundColor:
+                                    getColorPreview(
+                                      color.name
+                                    ),
+                                }}
+                                title={color.name}
+                              />
 
-                            <div>
+                              <div>
 
-                              <div className="font-semibold text-slate-800">
-                                {color.name}
-                              </div>
+                                <div className="font-semibold text-slate-800">
+                                  {color.name}
+                                </div>
 
-                              <div className="text-xs text-slate-400">
-                                ID: {color.id}
+                                <div className="text-xs text-slate-400">
+                                  ID: {color.id}
+                                </div>
+
                               </div>
 
                             </div>
 
-                          </div>
+                          </td>
 
-                        </td>
+                          <td className="px-5 py-4">
 
-                        <td className="px-5 py-4">
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              toggleStatus(
-                                color
-                              )
-                            }
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${color.status ===
-                              "active"
-                              ? "bg-green-50 text-green-700 hover:bg-green-100"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                              }`}
-                          >
-
-                            <span
-                              className={`h-2 w-2 rounded-full ${color.status ===
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleStatus(
+                                  color
+                                )
+                              }
+                              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${color.status ===
                                 "active"
-                                ? "bg-green-500"
-                                : "bg-slate-400"
+                                ? "bg-green-50 text-green-700 hover:bg-green-100"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                 }`}
-                            />
-
-                            {color.status ===
-                              "active"
-                              ? "Active"
-                              : "Inactive"}
-
-                          </button>
-
-                        </td>
-
-                        <td className="px-5 py-4 text-sm text-slate-500">
-
-                          {color.created_at
-                            ? new Date(
-                              color.created_at
-                            ).toLocaleDateString()
-                            : "-"}
-
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <div className="flex justify-end gap-2">
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openEditModal(
-                                  color
-                                )
-                              }
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                              title="Edit"
                             >
-                              <Pencil className="h-4 w-4" />
+
+                              <span
+                                className={`h-2 w-2 rounded-full ${color.status ===
+                                  "active"
+                                  ? "bg-green-500"
+                                  : "bg-slate-400"
+                                  }`}
+                              />
+
+                              {color.status ===
+                                "active"
+                                ? "Active"
+                                : "Inactive"}
+
                             </button>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openDeleteModal(
-                                  color
-                                )
-                              }
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                          </td>
 
-                          </div>
+                          <td className="px-5 py-4 text-sm text-slate-500">
 
-                        </td>
+                            {color.created_at
+                              ? new Date(
+                                color.created_at
+                              ).toLocaleDateString()
+                              : "-"}
 
-                      </tr>
+                          </td>
 
-                    )
-                  )}
+                          <td className="px-5 py-4">
 
-                </tbody>
+                            <div className="flex justify-end gap-2">
 
-              </table>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openEditModal(
+                                    color
+                                  )
+                                }
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
 
-            </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openDeleteModal(
+                                    color
+                                  )
+                                }
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
 
+                            </div>
+
+                          </td>
+
+                        </tr>
+
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              <div className="space-y-3 p-4 md:hidden">
+                {filteredColors.map((color, index) => (
+                  <article
+                    key={color.id}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="h-10 w-10 shrink-0 rounded-full border border-slate-300 shadow-sm"
+                        style={{
+                          backgroundColor: getColorPreview(color.name),
+                        }}
+                        title={color.name}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-slate-800">
+                          {color.name}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          #{index + 1} · ID: {color.id}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleStatus(color)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${color.status === 'active'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-slate-100 text-slate-600'
+                          }`}
+                      >
+                        {color.status === 'active' ? 'Active' : 'Inactive'}
+                      </button>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                      <span className="text-xs text-slate-500">
+                        {color.created_at
+                          ? new Date(color.created_at).toLocaleDateString()
+                          : '-'}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(color)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600"
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(color)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
           )}
 
         </div>

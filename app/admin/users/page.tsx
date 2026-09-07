@@ -60,7 +60,7 @@ export default function UsersPage() {
       } else {
         setError(
           data.message ||
-            'Failed to fetch users'
+          'Failed to fetch users'
         );
       }
     } catch (error) {
@@ -91,12 +91,12 @@ export default function UsersPage() {
 
       return (
         now.getTime() -
-          date.getTime() <
+        date.getTime() <
         30 *
-          24 *
-          60 *
-          60 *
-          1000
+        24 *
+        60 *
+        60 *
+        1000
       );
     }).length;
 
@@ -139,7 +139,7 @@ export default function UsersPage() {
       {/* SUMMARY */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* TOTAL */}
-        <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 shadow-sm sm:p-6">
           <p className="text-sm font-medium text-slate-600">
             Total Users
           </p>
@@ -154,7 +154,7 @@ export default function UsersPage() {
         </div>
 
         {/* NEW */}
-        <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 shadow-sm">
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 shadow-sm sm:p-6">
           <p className="text-sm font-medium text-slate-600">
             New This Month
           </p>
@@ -168,7 +168,7 @@ export default function UsersPage() {
           </p>
         </div>
 
-     
+
       </div>
 
       {/* USERS TABLE */}
@@ -179,7 +179,7 @@ export default function UsersPage() {
           </h2>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <DataTable
             columns={[
               {
@@ -221,17 +221,17 @@ export default function UsersPage() {
                 ),
               },
 
-              {
-                key: 'phone',
-                label: 'Phone',
+              // {
+              //   key: 'phone',
+              //   label: 'Phone',
 
-                render: (value) => (
-                  <span className="text-slate-700">
-                    {value ||
-                      'N/A'}
-                  </span>
-                ),
-              },
+              //   render: (value) => (
+              //     <span className="text-slate-700">
+              //       {value ||
+              //         'N/A'}
+              //     </span>
+              //   ),
+              // },
 
               {
                 key: 'created_at',
@@ -260,13 +260,13 @@ export default function UsersPage() {
               },
             ]}
             data={users}
-            renderActions={(
-              user
-            ) => (
-              <button className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200">
-                View Profile
-              </button>
-            )}
+          // renderActions={(
+          //   user
+          // ) => (
+          //   <button className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200">
+          //     View Profile
+          //   </button>
+          // )}
           />
         </div>
       </div>

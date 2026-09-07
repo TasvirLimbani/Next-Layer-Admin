@@ -44,13 +44,21 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-72' : 'w-20'
-        } border-r border-slate-200 bg-white transition-all duration-300 flex flex-col shadow-sm`}>
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-900/30 md:hidden"
+        />
+      )}
+      <aside className={`${sidebarOpen ? 'w-72 translate-x-0' : 'w-20 -translate-x-full md:translate-x-0'
+        } fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200 bg-white shadow-sm transition-all duration-300 md:relative`}>
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
           <div className="border-b border-slate-200 px-6 py-6">
@@ -82,6 +90,7 @@ export default function AdminLayout({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   title={!sidebarOpen ? item.name : ''}
                   className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive
                     ? 'bg-blue-50 text-blue-600 shadow-sm'
@@ -123,9 +132,9 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex min-w-0 flex-1 flex-col">
         {/* Top Header */}
-        <div className="border-b border-slate-200 bg-white px-8 py-4 flex items-center justify-between shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm sm:px-8 sm:py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -146,8 +155,8 @@ export default function AdminLayout({
         </div>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto p-8">
-          <div className="border border-slate-200 rounded-xl bg-white shadow-sm p-8">
+        <div className="min-w-0 flex-1 overflow-auto p-3 sm:p-6 lg:p-8">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
             {children}
           </div>
         </div>

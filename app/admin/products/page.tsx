@@ -570,7 +570,7 @@
 //     return fd;
 //   }
 
-  
+
 
 //   const handleEdit = (product: Product) => {
 //     setEditingProduct(product);
@@ -1057,7 +1057,7 @@ function normalizeProductImageGroups(
       (variant: any, index: number) => {
         const images =
           Array.isArray(variant?.image_urls) &&
-          variant.image_urls.length > 0
+            variant.image_urls.length > 0
             ? variant.image_urls
             : Array.isArray(variant?.images)
               ? variant.images
@@ -1092,7 +1092,7 @@ function normalizeProductImageGroups(
       (group: any, index: number) => {
         const images =
           Array.isArray(group?.image_urls) &&
-          group.image_urls.length > 0
+            group.image_urls.length > 0
             ? group.image_urls
             : Array.isArray(group?.images)
               ? group.images
@@ -1481,19 +1481,19 @@ export default function ProductsPage() {
                     product.variants
                   )
                     ? product.variants.map(
-                        (v: any) => ({
-                          color:
-                            v.color ||
-                            '',
+                      (v: any) => ({
+                        color:
+                          v.color ||
+                          '',
 
-                          image_urls:
-                            Array.isArray(
-                              v.image_urls
-                            )
-                              ? v.image_urls
-                              : [],
-                        })
-                      )
+                        image_urls:
+                          Array.isArray(
+                            v.image_urls
+                          )
+                            ? v.image_urls
+                            : [],
+                      })
+                    )
                     : [],
 
                 similar:
@@ -1505,18 +1505,18 @@ export default function ProductsPage() {
 
                 customizable:
                   product.customizable !==
-                  undefined
+                    undefined
                     ? Number(
-                        product.customizable
-                      )
+                      product.customizable
+                    )
                     : 0,
 
                 image_customizable:
                   product.image_customizable !==
-                  undefined
+                    undefined
                     ? Number(
-                        product.image_customizable
-                      )
+                      product.image_customizable
+                    )
                     : 0,
 
                 subcategory:
@@ -1532,11 +1532,11 @@ export default function ProductsPage() {
                     product.variants
                   )
                     ? product.variants
-                        .map(
-                          (v: any) =>
-                            v.color
-                        )
-                        .filter(Boolean)
+                      .map(
+                        (v: any) =>
+                          v.color
+                      )
+                      .filter(Boolean)
                     : [],
 
                 status:
@@ -1563,7 +1563,7 @@ export default function ProductsPage() {
       } else {
         setError(
           data.message ||
-            'Failed to fetch products'
+          'Failed to fetch products'
         );
       }
     } catch (err) {
@@ -1584,91 +1584,91 @@ export default function ProductsPage() {
      ADD PRODUCT
   ======================================================= */
 
-const handleAddProduct = async (
-  data: Product,
-  formData?: FormData
-) => {
-  if (!formData) {
-    throw new Error(
-      'Product data is missing.'
-    );
-  }
-
-  try {
-    const response = await fetch(
-      '/api/products',
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
-
-    // Try to read JSON regardless of HTTP status
-    let result: any = null;
-
-    try {
-      result = await response.json();
-    } catch {
-      result = null;
-    }
-
-    console.log(
-      'ADD PRODUCT RESPONSE:',
-      result
-    );
-
-    // ========================================
-    // HTTP ERROR
-    // ========================================
-
-    if (!response.ok) {
+  const handleAddProduct = async (
+    data: Product,
+    formData?: FormData
+  ) => {
+    if (!formData) {
       throw new Error(
-        result?.message ||
-        result?.error ||
-        `Error adding product (${response.status})`
+        'Product data is missing.'
       );
     }
 
-    // ========================================
-    // API ERROR
-    // ========================================
+    try {
+      const response = await fetch(
+        '/api/products',
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
-    if (
-      result?.success === false ||
-      result?.status === false
-    ) {
+      // Try to read JSON regardless of HTTP status
+      let result: any = null;
+
+      try {
+        result = await response.json();
+      } catch {
+        result = null;
+      }
+
+      console.log(
+        'ADD PRODUCT RESPONSE:',
+        result
+      );
+
+      // ========================================
+      // HTTP ERROR
+      // ========================================
+
+      if (!response.ok) {
+        throw new Error(
+          result?.message ||
+          result?.error ||
+          `Error adding product (${response.status})`
+        );
+      }
+
+      // ========================================
+      // API ERROR
+      // ========================================
+
+      if (
+        result?.success === false ||
+        result?.status === false
+      ) {
+        throw new Error(
+          result?.message ||
+          result?.error ||
+          result?.data?.message ||
+          'Error adding product.'
+        );
+      }
+
+      // ========================================
+      // SUCCESS
+      // ========================================
+
+      await fetchProducts();
+
+      // Close ONLY after successful API response
+      setShowForm(false);
+
+    } catch (error: any) {
+      console.error(
+        'Add product error:',
+        error
+      );
+
+      // VERY IMPORTANT:
+      // Do NOT set the page error here.
+      // Throw it back to ProductForm.
       throw new Error(
-        result?.message ||
-        result?.error ||
-        result?.data?.message ||
+        error?.message ||
         'Error adding product.'
       );
     }
-
-    // ========================================
-    // SUCCESS
-    // ========================================
-
-    await fetchProducts();
-
-    // Close ONLY after successful API response
-    setShowForm(false);
-
-  } catch (error: any) {
-    console.error(
-      'Add product error:',
-      error
-    );
-
-    // VERY IMPORTANT:
-    // Do NOT set the page error here.
-    // Throw it back to ProductForm.
-    throw new Error(
-      error?.message ||
-      'Error adding product.'
-    );
-  }
-};
+  };
 
   /* =======================================================
      UPDATE PRODUCT
@@ -1775,7 +1775,7 @@ const handleAddProduct = async (
         requestData.append(
           'status',
           product.status ||
-            'active'
+          'active'
         );
       }
 
@@ -1788,7 +1788,7 @@ const handleAddProduct = async (
           'customizable',
           String(
             product.customizable ??
-              0
+            0
           )
         );
       }
@@ -1802,7 +1802,7 @@ const handleAddProduct = async (
           'image_customizable',
           String(
             product.image_customizable ??
-              0
+            0
           )
         );
       }
@@ -1853,7 +1853,7 @@ const handleAddProduct = async (
       } else {
         setError(
           data.message ||
-            'Failed to update product'
+          'Failed to update product'
         );
       }
     } catch (err) {
@@ -1913,7 +1913,7 @@ const handleAddProduct = async (
         } else {
           setError(
             data.message ||
-              'Failed to delete product'
+            'Failed to delete product'
           );
         }
       } catch (err) {
@@ -2001,14 +2001,14 @@ const handleAddProduct = async (
     fd.append(
       'status',
       product.status ||
-        'active'
+      'active'
     );
 
     fd.append(
       'customizable',
       String(
         product.customizable ??
-          0
+        0
       )
     );
 
@@ -2016,7 +2016,7 @@ const handleAddProduct = async (
       'image_customizable',
       String(
         product.image_customizable ??
-          0
+        0
       )
     );
 
@@ -2103,7 +2103,7 @@ const handleAddProduct = async (
     setLightboxIndex(
       (prev) =>
         prev ===
-        lightboxImages.length -
+          lightboxImages.length -
           1
           ? 0
           : prev + 1
@@ -2115,7 +2115,7 @@ const handleAddProduct = async (
       (prev) =>
         prev === 0
           ? lightboxImages.length -
-            1
+          1
           : prev - 1
     );
   };
@@ -2182,7 +2182,7 @@ const handleAddProduct = async (
             PAGE HEADER
         ================================================= */}
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
 
           <div>
 
@@ -2272,7 +2272,7 @@ const handleAddProduct = async (
                     return (
                       sum +
                       price *
-                        stock
+                      stock
                     );
                   },
                   0
@@ -2411,12 +2411,12 @@ const handleAddProduct = async (
 
                         {colors.length >
                           1 && (
-                          <span>
-                            +
-                            {colors.length -
-                              1}
-                          </span>
-                        )}
+                            <span>
+                              +
+                              {colors.length -
+                                1}
+                            </span>
+                          )}
                       </button>
                     );
                   },
@@ -2446,9 +2446,9 @@ const handleAddProduct = async (
                   ) => {
                     if (
                       typeof value ===
-                        'string' ||
+                      'string' ||
                       typeof value ===
-                        'number'
+                      'number'
                     ) {
                       const text =
                         String(
@@ -2467,7 +2467,7 @@ const handleAddProduct = async (
                     if (
                       value &&
                       typeof value ===
-                        'object'
+                      'object'
                     ) {
                       const category =
                         value as {
@@ -2533,11 +2533,11 @@ const handleAddProduct = async (
                     const text =
                       typeof value ===
                         'string' ||
-                      typeof value ===
+                        typeof value ===
                         'number'
                         ? String(
-                            value
-                          )
+                          value
+                        )
                         : '';
 
                     return (
@@ -2564,11 +2564,11 @@ const handleAddProduct = async (
                     const text =
                       typeof value ===
                         'string' ||
-                      typeof value ===
+                        typeof value ===
                         'number'
                         ? String(
-                            value
-                          )
+                          value
+                        )
                         : '';
 
                     return (
@@ -2705,7 +2705,7 @@ const handleAddProduct = async (
 
       {showLightbox &&
         lightboxImages.length >
-          0 && (
+        0 && (
           <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4">
 
             <div className="relative flex w-full max-w-4xl flex-col items-center">
@@ -2732,7 +2732,7 @@ const handleAddProduct = async (
                 <img
                   src={getPreviewSrc(
                     lightboxImages[
-                      lightboxIndex
+                    lightboxIndex
                     ]
                   )}
                   alt={`Product image ${lightboxIndex + 1}`}
@@ -2760,41 +2760,41 @@ const handleAddProduct = async (
 
               {lightboxImages.length >
                 1 && (
-                <div className="mt-6 flex items-center justify-center gap-4">
+                  <div className="mt-6 flex items-center justify-center gap-4">
 
-                  <button
-                    type="button"
-                    onClick={
-                      prevImage
-                    }
-                    className="rounded-lg p-3 text-white transition-colors hover:bg-white/20"
-                    title="Previous image"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={
+                        prevImage
+                      }
+                      className="rounded-lg p-3 text-white transition-colors hover:bg-white/20"
+                      title="Previous image"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </button>
 
-                  <div className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white">
-                    {lightboxIndex +
-                      1}{' '}
-                    /{' '}
-                    {
-                      lightboxImages.length
-                    }
+                    <div className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white">
+                      {lightboxIndex +
+                        1}{' '}
+                      /{' '}
+                      {
+                        lightboxImages.length
+                      }
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={
+                        nextImage
+                      }
+                      className="rounded-lg p-3 text-white transition-colors hover:bg-white/20"
+                      title="Next image"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </button>
+
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={
-                      nextImage
-                    }
-                    className="rounded-lg p-3 text-white transition-colors hover:bg-white/20"
-                    title="Next image"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-
-                </div>
-              )}
+                )}
 
             </div>
 

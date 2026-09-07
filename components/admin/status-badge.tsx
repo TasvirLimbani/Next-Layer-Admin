@@ -1,7 +1,18 @@
-import { CheckCircle, Clock, Loader, XCircle } from 'lucide-react';
+import {
+  CheckCircle,
+  Clock,
+  Loader,
+  PackageCheck,
+  XCircle,
+} from 'lucide-react';
 
 interface StatusBadgeProps {
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status:
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled';
 }
 
 const statusConfig = {
@@ -16,6 +27,12 @@ const statusConfig = {
     text: 'text-blue-700',
     label: 'Processing',
     icon: Loader,
+  },
+  shipped: {
+    bg: 'bg-violet-50 border border-violet-200',
+    text: 'text-violet-700',
+    label: 'Shipped',
+    icon: PackageCheck,
   },
   completed: {
     bg: 'bg-green-50 border border-green-200',

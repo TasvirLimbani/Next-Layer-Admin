@@ -1,6 +1,6 @@
 'use client';
 
-import {IndianRupee,  Package, ShoppingCart, Users, TrendingUp, Eye, AlertCircle } from 'lucide-react';
+import { IndianRupee, Package, ShoppingCart, Users, TrendingUp, Eye, AlertCircle } from 'lucide-react';
 import { StatCard } from '@/components/admin/stat-card';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -91,18 +91,29 @@ export default function DashboardPage() {
   const totalUsers = dashboardData.total_users;
   const revenueGrowth = 12.5;
 
+  const completedOrders = dashboardData.latest_orders.filter(
+    (order) => {
+      const status = order.order_status.trim().toLowerCase();
+      return (
+        status === 'completed' ||
+        status === 'complete' ||
+        status === 'delivered'
+      );
+    }
+  ).length;
+
   const recentOrders = dashboardData.latest_orders.map((order) => ({
     id: order.id,
     customerName: `Order ${order.id}`,
     date: order.created_at,
     total: parseFloat(order.total_amount),
-    status: order.order_status.toLowerCase(),
+    status: order.order_status.trim().toLowerCase(),
   }));
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-     
+
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -118,7 +129,7 @@ export default function DashboardPage() {
         <StatCard
           title="Total Orders"
           value={totalOrders}
-          completed={totalOrders}
+          completed={completedOrders}
           icon={ShoppingCart}
           color="green"
         />
@@ -134,7 +145,7 @@ export default function DashboardPage() {
           icon={Users}
           color="orange"
         />
-        
+
       </div>
 
       {/* Recent Orders Section */}
@@ -145,7 +156,7 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-500 mt-1">Latest transactions from your customers</p>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <DataTable
             columns={[
               {
@@ -182,11 +193,23 @@ export default function DashboardPage() {
                 key: 'status',
                 label: 'Status',
                 render: (value) => {
-                  // Map order status to badge format
-                  const statusMap: Record<string, 'completed' | 'pending' | 'cancelled'> = {
+                  const statusMap: Record<
+                    string,
+                    | 'completed'
+                    | 'pending'
+                    | 'processing'
+                    | 'shipped'
+                    | 'cancelled'
+                  > = {
                     'pending': 'pending',
+                    'processing': 'processing',
+                    'processed': 'processing',
+                    'shipped': 'shipped',
                     'completed': 'completed',
+                    'complete': 'completed',
+                    'delivered': 'completed',
                     'cancelled': 'cancelled',
+                    'canceled': 'cancelled',
                   };
                   return (
                     <StatusBadge status={statusMap[value as string] || 'pending'} />
@@ -225,7 +248,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <DataTable
             columns={[
               {
